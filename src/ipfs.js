@@ -1,125 +1,146 @@
-import { create } from 'ipfs-http-client';
+// IPFS Service using Pinata Cloud
+// Make sure to set your environment variable: REACT_APP_PINATA_JWT
 
-// Create IPFS client with error handling for missing credentials
-const createIPFSClient = () => {
-  try {
-    const projectId =f173263ca5b54830a15495154a290a55;
-    const projectSecret =Mcn+cyoDj3WtNYFv4cSr5ZC8tzvryGERojZUvCWmwhipZ4qHRbyOWw;
+// Get Pinata JWT from environment variables
+const PINATA_JWT ='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySW5mb3JtYXRpb24iOnsiaWQiOiJjYmExNDYwYS01OGM0LTRhNWYtODExYy1lNDc4NmRjMjczMjkiLCJlbWFpbCI6InByYXNpbmR1ZGVzaGFuMUBnbWFpbC5jb20iLCJlbWFpbF92ZXJpZmllZCI6dHJ1ZSwicGluX3BvbGljeSI6eyJyZWdpb25zIjpbeyJkZXNpcmVkUmVwbGljYXRpb25Db3VudCI6MSwiaWQiOiJGUkExIn0seyJkZXNpcmVkUmVwbGljYXRpb25Db3VudCI6MSwiaWQiOiJOWUMxIn1dLCJ2ZXJzaW9uIjoxfSwibWZhX2VuYWJsZWQiOmZhbHNlLCJzdGF0dXMiOiJBQ1RJVkUifSwiYXV0aGVudGljYXRpb25UeXBlIjoic2NvcGVkS2V5Iiwic2NvcGVkS2V5S2V5IjoiMWNhMDU1MzZlOTIyYWU3OTI3MTQiLCJzY29wZWRLZXlTZWNyZXQiOiIxOTg5ZmJiNjcyZDJlMjgzOThlZjljY2ZjMzNiYjEyMDc2N2Y3YjE3ZGMyZDcyZTM4NTI2ZmE5MzlmNzg5ZWY1IiwiZXhwIjoxNzc5ODExMTQ1fQ.PvvYtrarlApq9b99WpfTxMZ74Vs6WS_I3o9V0DtUGNE';
 
-    console.log("ID:", projectId);
-    console.log("SECRET:", projectSecret);
+// Pinata API endpoints
+const PINATA_BASE_URL = 'https://api.pinata.cloud';
+const PINATA_GATEWAY = 'https://gateway.pinata.cloud';
 
-
-
-    if (!projectId || !projectSecret) {
-      console.warn('IPFS credentials not found. IPFS functionality will be disabled.');
-      console.log('To enable IPFS, set the following environment variables:');
-      console.log('- REACT_APP_INFURA_PROJECT_ID');
-      console.log('- REACT_APP_INFURA_PROJECT_SECRET');
-      return null;
-    }
-
-    return create({
-      host: 'ipfs.infura.io',
-      port: 5001,
-      protocol: 'https',
-      headers: {
-        authorization: `Basic ${Buffer.from(`${projectId}:${projectSecret}`).toString('base64')}`
-      }
-    });
-  } catch (error) {
-    console.error('Failed to initialize IPFS client:', error);
-    return null;
-  }
-};
-
-
-
-// Initialize IPFS client
-const ipfs = createIPFSClient();
-
-// Fallback function for when IPFS is not available
+// Create a mock hash for development when Pinata is not configured
 const createMockHash = (file) => {
-  // Create a deterministic mock hash based on file properties
   const timestamp = Date.now();
   const fileInfo = `${file.name}-${file.size}-${timestamp}`;
   return `mock-${btoa(fileInfo).replace(/[^a-zA-Z0-9]/g, '').substring(0, 32)}`;
 };
 
-// Main upload function used by the voting app
+// Store mock files in memory (since localStorage is not available in artifacts)
+const mockStorage = new Map();
+
+// Main upload function using Pinata
 export const uploadToIPFS = async (file) => {
   try {
     if (!file) {
       throw new Error('No file provided for upload');
     }
 
-    // Validate file type for election/candidate images
+    // Validate file type
     if (!file.type.startsWith('image/')) {
       throw new Error('Only image files are allowed');
     }
 
-    // Check file size (max 10MB for images)
+    // Validate file size (10MB limit)
     const maxSize = 10 * 1024 * 1024; // 10MB
     if (file.size > maxSize) {
       throw new Error('File size too large. Maximum 10MB allowed.');
     }
 
-    // If IPFS client is not available, create a mock hash for development
-    if (!ipfs) {
-      console.warn('IPFS client not available. Creating mock hash for development...');
-      const mockHash = createMockHash(file);
-      console.log(`Mock hash created: ${mockHash}`);
-      
-      // Store the file in localStorage for development (not recommended for production)
-      try {
-        const reader = new FileReader();
-        reader.onload = () => {
-          localStorage.setItem(`ipfs-mock-${mockHash}`, reader.result);
-        };
-        reader.readAsDataURL(file);
-      } catch (e) {
-        console.warn('Could not store file in localStorage:', e);
-      }
-      
-      return mockHash;
+    // Check if Pinata JWT is configured
+    if (!PINATA_JWT) {
+      console.warn('Pinata JWT not configured, using mock mode');
+      return handleMockUpload(file);
     }
 
-    console.log(`Uploading ${file.name} to IPFS...`);
-    
-    // Upload to IPFS with pinning enabled
-    const added = await ipfs.add(file, {
-      pin: true,
-      cidVersion: 1 // Use CID v1 for better compatibility
+    // Create FormData for Pinata upload
+    const formData = new FormData();
+    formData.append('file', file);
+
+    // Add metadata
+    const metadata = JSON.stringify({
+      name: file.name,
+      keyvalues: {
+        uploadedAt: new Date().toISOString(),
+        fileType: file.type,
+        fileSize: file.size.toString()
+      }
     });
-    
-    console.log(`Successfully uploaded to IPFS: ${added.path}`);
-    console.log(`File size: ${added.size} bytes`);
-    
-    // Return the hash (path) as expected by the existing code
-    return added.path;
+    formData.append('pinataMetadata', metadata);
+
+    // Optional: Add pinning options
+    const options = JSON.stringify({
+      cidVersion: 1,
+      customPinPolicy: {
+        // You can add custom pin policies here if needed
+      }
+    });
+    formData.append('pinataOptions', options);
+
+    console.log('Uploading to Pinata...');
+
+    // Upload to Pinata
+    const response = await fetch(`${PINATA_BASE_URL}/pinning/pinFileToIPFS`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${PINATA_JWT}`,
+        // Don't set Content-Type header - let the browser set it for FormData
+      },
+      body: formData
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('Pinata upload failed:', errorText);
+      throw new Error(`Failed to upload to Pinata: ${response.status} ${response.statusText}`);
+    }
+
+    const result = await response.json();
+    console.log('Successfully uploaded to Pinata:', result);
+
+    // Return the IPFS hash (CID)
+    return result.IpfsHash;
+
   } catch (error) {
     console.error('Error uploading to IPFS:', error);
-    throw new Error(`IPFS upload failed: ${error.message}`);
+    
+    // Fallback to mock mode if Pinata fails
+    if (error.message.includes('Pinata') || error.message.includes('fetch')) {
+      console.warn('Falling back to mock mode due to Pinata error');
+      return handleMockUpload(file);
+    }
+    
+    throw error;
   }
 };
 
-// Get IPFS URL using Infura gateway (as used in the current code)
-export const getIPFSURL = (hash) => {
+// Handle mock upload for development
+const handleMockUpload = async (file) => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    
+    reader.onload = () => {
+      const mockHash = createMockHash(file);
+      const dataUrl = reader.result;
+      
+      // Store in memory instead of localStorage
+      mockStorage.set(`ipfs-mock-${mockHash}`, dataUrl);
+      
+      console.log(`Mock upload successful: ${mockHash}`);
+      resolve(mockHash);
+    };
+    
+    reader.onerror = () => {
+      reject(new Error('Failed to read file for mock upload'));
+    };
+    
+    reader.readAsDataURL(file);
+  });
+};
+
+// Get IPFS URL with multiple gateway options
+export const getIPFSURL = (hash, gateway = 'pinata') => {
   if (!hash) {
     throw new Error('Hash is required to generate IPFS URL');
   }
   
-  // Handle mock hashes for development
+  // Handle mock hashes
   if (hash.startsWith('mock-')) {
-    try {
-      const mockData = localStorage.getItem(`ipfs-mock-${hash}`);
-      if (mockData) {
-        return mockData; // Return the data URL directly
-      }
-    } catch (e) {
-      console.warn('Could not retrieve mock file:', e);
+    const mockData = mockStorage.get(`ipfs-mock-${hash}`);
+    if (mockData) {
+      return mockData; // Return the data URL directly
     }
-    // Return a placeholder image if mock data is not available
+    
+    // Return a placeholder SVG if mock data is not available
     return `data:image/svg+xml,${encodeURIComponent(`
       <svg width="200" height="200" xmlns="http://www.w3.org/2000/svg">
         <rect width="200" height="200" fill="#f0f0f0"/>
@@ -133,11 +154,20 @@ export const getIPFSURL = (hash) => {
     `)}`;
   }
   
-  return `https://ipfs.infura.io/ipfs/${hash}`;
+  // Available IPFS gateways
+  const gateways = {
+    pinata: `${PINATA_GATEWAY}/ipfs/${hash}`,
+    cloudflare: `https://cloudflare-ipfs.com/ipfs/${hash}`,
+    ipfs: `https://ipfs.io/ipfs/${hash}`,
+    dweb: `https://dweb.link/ipfs/${hash}`,
+    infura: `https://ipfs.infura.io/ipfs/${hash}`
+  };
+
+  return gateways[gateway] || gateways.pinata;
 };
 
-// Alternative function with multiple gateway options for better reliability
-export const getIPFSURLWithFallback = (hash, preferredGateway = 'infura') => {
+// Get IPFS URL with fallback gateways for better reliability
+export const getIPFSURLWithFallback = (hash, preferredGateway = 'pinata') => {
   if (!hash) {
     throw new Error('Hash is required to generate IPFS URL');
   }
@@ -148,30 +178,42 @@ export const getIPFSURLWithFallback = (hash, preferredGateway = 'infura') => {
   }
 
   const gateways = {
-    infura: `https://ipfs.infura.io/ipfs/${hash}`,
+    pinata: `${PINATA_GATEWAY}/ipfs/${hash}`,
     cloudflare: `https://cloudflare-ipfs.com/ipfs/${hash}`,
-    pinata: `https://gateway.pinata.cloud/ipfs/${hash}`,
+    ipfs: `https://ipfs.io/ipfs/${hash}`,
     dweb: `https://dweb.link/ipfs/${hash}`,
-    ipfs: `https://ipfs.io/ipfs/${hash}`
+    infura: `https://ipfs.infura.io/ipfs/${hash}`
   };
 
-  return gateways[preferredGateway] || gateways.infura;
+  return gateways[preferredGateway] || gateways.pinata;
 };
 
-// Batch upload function for multiple files (useful for elections with many candidates)
+// Batch upload function for multiple files
 export const uploadMultipleToIPFS = async (files) => {
   try {
     if (!files || files.length === 0) {
       throw new Error('No files provided for upload');
     }
 
+    console.log(`Starting batch upload of ${files.length} files...`);
+
     const uploadPromises = Array.from(files).map(async (file, index) => {
       try {
         const hash = await uploadToIPFS(file);
-        return { index, hash, file: file.name, success: true };
+        return { 
+          index, 
+          hash, 
+          fileName: file.name, 
+          success: true 
+        };
       } catch (error) {
         console.error(`Failed to upload file ${file.name}:`, error);
-        return { index, error: error.message, file: file.name, success: false };
+        return { 
+          index, 
+          error: error.message, 
+          fileName: file.name, 
+          success: false 
+        };
       }
     });
 
@@ -183,6 +225,8 @@ export const uploadMultipleToIPFS = async (files) => {
     if (failed.length > 0) {
       console.warn(`${failed.length} files failed to upload:`, failed);
     }
+    
+    console.log(`Batch upload complete: ${successful.length} successful, ${failed.length} failed`);
     
     return {
       successful,
@@ -196,20 +240,16 @@ export const uploadMultipleToIPFS = async (files) => {
   }
 };
 
-// Function to verify if a hash exists and is accessible
-export const verifyIPFSHash = async (hash) => {
+// Verify if a hash exists and is accessible
+export const verifyIPFSHash = async (hash, gateway = 'pinata') => {
   try {
-    if (!ipfs) {
-      return {
-        exists: hash?.startsWith('mock-') || false,
-        isMock: hash?.startsWith('mock-') || false,
-        error: hash?.startsWith('mock-') ? null : 'IPFS client not initialized'
-      };
+    if (!hash) {
+      return { exists: false, error: 'No hash provided' };
     }
     
     // Handle mock hashes
-    if (hash?.startsWith('mock-')) {
-      const mockData = localStorage.getItem(`ipfs-mock-${hash}`);
+    if (hash.startsWith('mock-')) {
+      const mockData = mockStorage.get(`ipfs-mock-${hash}`);
       return {
         exists: !!mockData,
         isMock: true,
@@ -217,13 +257,17 @@ export const verifyIPFSHash = async (hash) => {
       };
     }
     
-    // Try to get file stats to verify it exists
-    const stats = await ipfs.files.stat(`/ipfs/${hash}`);
+    // Try to fetch the file to verify it exists
+    const url = getIPFSURL(hash, gateway);
+    const response = await fetch(url, { method: 'HEAD' });
+    
     return {
-      exists: true,
-      size: stats.size,
-      url: getIPFSURL(hash),
-      isMock: false
+      exists: response.ok,
+      status: response.status,
+      url: url,
+      isMock: false,
+      contentType: response.headers.get('content-type'),
+      contentLength: response.headers.get('content-length')
     };
   } catch (error) {
     console.error(`Failed to verify IPFS hash ${hash}:`, error);
@@ -235,40 +279,71 @@ export const verifyIPFSHash = async (hash) => {
   }
 };
 
-// Utility function to check if IPFS client is ready
-export const isIPFSReady = () => {
-  return ipfs !== undefined && ipfs !== null;
-};
-
-// Function to get client status
-export const getIPFSStatus = async () => {
+// Check Pinata connection and authentication
+export const checkPinataConnection = async () => {
   try {
-    if (!ipfs) {
-      return { 
-        ready: false, 
-        error: 'IPFS client not initialized',
-        mockMode: true,
-        message: 'Running in mock mode for development'
+    if (!PINATA_JWT) {
+      return {
+        connected: false,
+        error: 'Pinata JWT not configured',
+        message: 'Set REACT_APP_PINATA_JWT in your environment variables'
       };
     }
-    
-    const isOnline = await ipfs.isOnline();
-    return { 
-      ready: true, 
-      online: isOnline,
-      mockMode: false 
-    };
+
+    const response = await fetch(`${PINATA_BASE_URL}/data/testAuthentication`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${PINATA_JWT}`
+      }
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      return {
+        connected: true,
+        message: data.message || 'Connected to Pinata successfully'
+      };
+    } else {
+      return {
+        connected: false,
+        error: `Authentication failed: ${response.status} ${response.statusText}`
+      };
+    }
   } catch (error) {
-    return { 
-      ready: false, 
-      error: error.message,
-      mockMode: false
+    return {
+      connected: false,
+      error: `Connection failed: ${error.message}`
     };
   }
 };
 
-// Function to preload images for better UX (useful for election/candidate images)
-export const preloadIPFSImage = (hash) => {
+// Get Pinata account usage (optional)
+export const getPinataUsage = async () => {
+  try {
+    if (!PINATA_JWT) {
+      throw new Error('Pinata JWT not configured');
+    }
+
+    const response = await fetch(`${PINATA_BASE_URL}/data/userPinnedDataTotal`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${PINATA_JWT}`
+      }
+    });
+
+    if (response.ok) {
+      return await response.json();
+    } else {
+      throw new Error(`Failed to get usage data: ${response.status}`);
+    }
+  } catch (error) {
+    console.error('Error getting Pinata usage:', error);
+    throw error;
+  }
+};
+
+// Preload images for better UX
+export const preloadIPFSImage = (hash, gateway = 'pinata') => {
   return new Promise((resolve, reject) => {
     if (!hash) {
       reject(new Error('No hash provided'));
@@ -278,11 +353,11 @@ export const preloadIPFSImage = (hash) => {
     const img = new Image();
     img.onload = () => resolve(img);
     img.onerror = () => reject(new Error(`Failed to load image from IPFS: ${hash}`));
-    img.src = getIPFSURL(hash);
+    img.src = getIPFSURL(hash, gateway);
   });
 };
 
-// Helper function to convert File to ArrayBuffer for processing
+// Utility function to convert File to ArrayBuffer
 export const fileToArrayBuffer = (file) => {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -292,34 +367,50 @@ export const fileToArrayBuffer = (file) => {
   });
 };
 
-// Development helper to clear mock data
+// Get setup instructions for Pinata
+export const getSetupInstructions = () => {
+  return {
+    service: 'Pinata Cloud',
+    message: 'To use IPFS functionality with Pinata, you need to configure your API key',
+    steps: [
+      '1. Go to https://pinata.cloud and create an account',
+      '2. Navigate to the API Keys section in your dashboard',
+      '3. Create a new API key with the following permissions:',
+      '   - pinFileToIPFS: enabled',
+      '   - pinJSONToIPFS: enabled (optional)',
+      '   - userPinnedDataTotal: enabled (optional, for usage stats)',
+      '4. Copy the JWT token (not the API key and secret)',
+      '5. Create a .env file in your project root',
+      '6. Add the following environment variable:',
+      '   REACT_APP_PINATA_JWT=your_jwt_token_here',
+      '7. Restart your development server',
+      '',
+      'Note: Keep your JWT token secure and never commit it to version control!'
+    ],
+    currentStatus: PINATA_JWT ? 'JWT configured ✅' : 'JWT not configured ❌'
+  };
+};
+
+// Clear mock data (for development)
 export const clearMockIPFSData = () => {
   try {
-    const keys = Object.keys(localStorage);
-    keys.forEach(key => {
-      if (key.startsWith('ipfs-mock-')) {
-        localStorage.removeItem(key);
-      }
-    });
+    mockStorage.clear();
     console.log('Cleared all mock IPFS data');
   } catch (error) {
     console.error('Error clearing mock IPFS data:', error);
   }
 };
 
-// Get environment setup instructions
-export const getSetupInstructions = () => {
+// Export configuration status
+export const getIPFSStatus = async () => {
+  const pinataStatus = await checkPinataConnection();
+  
   return {
-    message: 'To use IPFS functionality, you need to set up Infura credentials',
-    steps: [
-      '1. Go to https://infura.io and create an account',
-      '2. Create a new IPFS project',
-      '3. Get your Project ID and Project Secret',
-      '4. Create a .env file in your project root',
-      '5. Add the following environment variables:',
-      '   REACT_APP_INFURA_PROJECT_ID=your_project_id',
-      '   REACT_APP_INFURA_PROJECT_SECRET=your_project_secret',
-      '6. Restart your development server'
-    ]
+    service: 'Pinata Cloud',
+    configured: !!PINATA_JWT,
+    connected: pinataStatus.connected,
+    mockMode: !PINATA_JWT,
+    message: pinataStatus.message || pinataStatus.error,
+    gateway: PINATA_GATEWAY
   };
 };

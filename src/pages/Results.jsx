@@ -52,64 +52,135 @@ function Results() {
     fetchElections();
   }, [contract, account]);
 
+  // Helper function to safely get total votes with proper error handling
+  const getSafeVoteCount = async (electionId, hasAccess, canViewResults) => {
+    if (!hasAccess || !canViewResults) {
+      return 0; // Return 0 if no access instead of making the call
+    }
+    
+    try {
+      const totalVotes = await contract.getTotalVotes(electionId);
+      return Number(totalVotes);
+    } catch (error) {
+      console.log(`Cannot access vote count for election ${electionId}:`, error.reason || error.message);
+      return 0; // Return 0 instead of throwing error
+    }
+  };
+
+  // Helper function to check user access with better error handling
+  const checkUserAccess = async (electionId, electionInfo) => {
+    if (!account) return false;
+    
+    try {
+      // Check if user is creator
+      if (electionInfo.creator.toLowerCase() === account.toLowerCase()) {
+        return true;
+      }
+      
+      // Check if user has voted (only if election allows it)
+      try {
+        const hasVoted = await contract.hasVoterVoted(electionId, account);
+        if (hasVoted) return true;
+      } catch (voteError) {
+        console.log(`Cannot check voting status for election ${electionId}:`, voteError.reason || voteError.message);
+      }
+      
+      // For public elections, allow access if results are available
+      const currentTime = Math.floor(Date.now() / 1000);
+      const canViewResults = currentTime > electionInfo.endTime || electionInfo.ended;
+      
+      return electionInfo.isPublic && canViewResults;
+      
+    } catch (error) {
+      console.log(`Access check failed for election ${electionId}:`, error.reason || error.message);
+      return false;
+    }
+  };
+
   const fetchElections = async () => {
     if (!contract) return;
     setLoading(true);
+    setMessage('');
+    
     try {
       const count = Number(await contract.electionCount());
       const list = [];
 
       for (let i = 0; i < count; i++) {
-        const electionInfo = await contract.getElectionInfo(i);
-        const currentTime = Math.floor(Date.now() / 1000);
-        const canViewResults = currentTime > electionInfo.endTime || electionInfo.ended;
-        
-        // Get total votes for this election
-        const totalVotes = Number(await contract.getTotalVotes(i));
-        
-        // Check if user can view results
-        let hasAccess = false;
         try {
-          if (account) {
-            const hasVoted = await contract.hasVoterVoted(i, account);
-            hasAccess = electionInfo.creator.toLowerCase() === account.toLowerCase() || 
-                       hasVoted || 
-                       (electionInfo.isPublic && canViewResults);
+          const electionInfo = await contract.getElectionInfo(i);
+          const currentTime = Math.floor(Date.now() / 1000);
+          const canViewResults = currentTime > electionInfo.endTime || electionInfo.ended;
+          
+          // Check user access with improved error handling
+          const hasAccess = await checkUserAccess(i, electionInfo);
+          
+          // Only proceed if user has access and can view results
+          let totalVotes = 0;
+          if (hasAccess && canViewResults) {
+            totalVotes = await getSafeVoteCount(i, hasAccess, canViewResults);
           }
-        } catch (err) {
-          console.log('Access check failed for election', i);
+          
+          // Only add elections where user has access and can view results
+          if (hasAccess && canViewResults) {
+            list.push({
+              id: i,
+              name: electionInfo.name,
+              imageHash: electionInfo.imageHash,
+              startTime: Number(electionInfo.startTime),
+              endTime: Number(electionInfo.endTime),
+              isPublic: electionInfo.isPublic,
+              creator: electionInfo.creator,
+              ended: electionInfo.ended,
+              candidateCount: Number(electionInfo.candidateCount),
+              canViewResults,
+              hasAccess,
+              totalVotes,
+              category: "General" // Default category
+            });
+          }
+        } catch (electionError) {
+          console.log(`Error processing election ${i}:`, electionError.reason || electionError.message);
+          // Continue to next election instead of failing completely
         }
-        
-        list.push({
-          id: i,
-          name: electionInfo.name,
-          imageHash: electionInfo.imageHash,
-          startTime: Number(electionInfo.startTime),
-          endTime: Number(electionInfo.endTime),
-          isPublic: electionInfo.isPublic,
-          creator: electionInfo.creator,
-          ended: electionInfo.ended,
-          candidateCount: Number(electionInfo.candidateCount),
-          canViewResults,
-          hasAccess,
-          totalVotes,
-          category: "General" // Default category
-        });
       }
 
-      setElections(list.filter(e => e.hasAccess && e.canViewResults));
+      setElections(list);
+      
+      if (list.length === 0) {
+        setMessage('No elections available for viewing. You may need to vote in an election or wait for results to be published.');
+      }
+      
     } catch (err) {
       console.error('Error fetching elections:', err);
-      setMessage('❌ Error fetching elections');
+      setMessage('❌ Error fetching elections. Please check your connection and try again.');
     } finally {
       setLoading(false);
     }
   };
+
   const fetchElectionResults = async (election) => {
     if (!contract || !election) return;
 
     setLoading(true);
+    setMessage('');
+    
     try {
+      // Double-check access before fetching results
+      const hasAccess = await checkUserAccess(election.id, election);
+      
+      if (!hasAccess) {
+        throw new Error('You do not have permission to view these results');
+      }
+      
+      // Check if results are available
+      const currentTime = Math.floor(Date.now() / 1000);
+      const canViewResults = currentTime > election.endTime || election.ended;
+      
+      if (!canViewResults) {
+        throw new Error('Results are not yet available. Please wait until the election ends.');
+      }
+      
       const resultsData = await contract.getElectionResults(election.id);
       const totalVotes = await contract.getTotalVotes(election.id);
       
@@ -130,9 +201,18 @@ function Results() {
       processedResults.candidates.sort((a, b) => b.voteCount - a.voteCount);
       
       setResults(processedResults);
+      
     } catch (err) {
       console.error('Error fetching results:', err);
-      setMessage('❌ Error fetching results. You may not have permission to view them.');
+      const errorMessage = err.reason || err.message || 'Unknown error occurred';
+      
+      if (errorMessage.includes('Results not available yet')) {
+        setMessage('⏰ Results are not yet available. Please wait until the election ends.');
+      } else if (errorMessage.includes('Not authorized') || errorMessage.includes('permission')) {
+        setMessage('🔒 You do not have permission to view these results. You may need to vote in this election first.');
+      } else {
+        setMessage(`❌ Error fetching results: ${errorMessage}`);
+      }
     } finally {
       setLoading(false);
     }
@@ -291,6 +371,22 @@ function Results() {
 
       <div className="relative z-10 px-4 py-8">
         <div className="max-w-7xl mx-auto">
+          {/* Error Message Display */}
+          {message && (
+            <motion.div
+              className={`mb-6 p-4 rounded-xl ${
+                message.includes('❌') ? 'bg-red-500/20 border border-red-500/30 text-red-200' :
+                message.includes('⏰') ? 'bg-yellow-500/20 border border-yellow-500/30 text-yellow-200' :
+                message.includes('🔒') ? 'bg-blue-500/20 border border-blue-500/30 text-blue-200' :
+                'bg-gray-500/20 border border-gray-500/30 text-gray-200'
+              }`}
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+            >
+              <p className="text-center font-medium">{message}</p>
+            </motion.div>
+          )}
+
           <AnimatePresence mode="wait">
             {!showElectionView ? (
               // Enhanced Elections List View
@@ -346,100 +442,100 @@ function Results() {
                   </div>
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-        {filteredElections.map((election, index) => (
-          <motion.div
-            key={election.id}
-            className="group relative bg-white/10 backdrop-blur-md rounded-2xl overflow-hidden border border-white/20 hover:border-white/40 transition-all duration-300 cursor-pointer"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: index * 0.1 }}
-            whileHover={{ y: -5, scale: 1.02 }}
-            onClick={() => handleElectionClick(election)}
-          >
-            {/* Card Header Image - Now showing actual election image */}
-            <div className="h-48 relative overflow-hidden ">
-              {election.imageHash ? (
-                <img
-                  src={getIPFSURL(election.imageHash)}
-                  alt={election.name}
-                  className="w-full h-full object-cover"
-                  onError={(e) => {
-                    e.target.src = `data:image/svg+xml,${encodeURIComponent(`
-                      <svg width="200" height="200" xmlns="http://www.w3.org/2000/svg">
-                        <rect width="200" height="200" fill="#4f46e5"/>
-                        <text x="100" y="100" text-anchor="middle" dy=".3em" font-family="sans-serif" font-size="20" fill="#ffffff">
-                          ${election.name}
-                        </text>
-                      </svg>
-                    `)}`;
-                  }}
-                />
-              ) : (
-                <div className="w-full h-full bg-gradient-to-br from-purple-500 to-blue-600 flex items-center justify-center">
-                  <div className="text-center">
-                    <Trophy className="w-12 h-12 text-white/80 mx-auto mb-2" />
-                    <p className="text-white/90 font-semibold">{election.name}</p>
+                    {filteredElections.map((election, index) => (
+                      <motion.div
+                        key={election.id}
+                        className="group relative bg-white/10 backdrop-blur-md rounded-2xl overflow-hidden border border-white/20 hover:border-white/40 transition-all duration-300 cursor-pointer"
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: index * 0.1 }}
+                        whileHover={{ y: -5, scale: 1.02 }}
+                        onClick={() => handleElectionClick(election)}
+                      >
+                        {/* Card Header Image - Now showing actual election image */}
+                        <div className="h-48 relative overflow-hidden ">
+                          {election.imageHash ? (
+                            <img
+                              src={getIPFSURL(election.imageHash)}
+                              alt={election.name}
+                              className="w-full h-full object-cover"
+                              onError={(e) => {
+                                e.target.src = `data:image/svg+xml,${encodeURIComponent(`
+                                  <svg width="200" height="200" xmlns="http://www.w3.org/2000/svg">
+                                    <rect width="200" height="200" fill="#4f46e5"/>
+                                    <text x="100" y="100" text-anchor="middle" dy=".3em" font-family="sans-serif" font-size="20" fill="#ffffff">
+                                      ${election.name}
+                                    </text>
+                                  </svg>
+                                `)}`;
+                              }}
+                            />
+                          ) : (
+                            <div className="w-full h-full bg-gradient-to-br from-purple-500 to-blue-600 flex items-center justify-center">
+                              <div className="text-center">
+                                <Trophy className="w-12 h-12 text-white/80 mx-auto mb-2" />
+                                <p className="text-white/90 font-semibold">{election.name}</p>
+                              </div>
+                            </div>
+                          )}
+                          <div className="absolute inset-0 bg-black/20"></div>
+                          
+                          {/* Floating Status Badge */}
+                          <div className="absolute top-4 right-4">
+                            {getStatusBadge(election)}
+                          </div>
+                        </div>
+
+                        {/* Card Content */}
+                        <div className="p-6 space-y-4">
+                          <div>
+                            <h3 className="text-xl font-bold text-white mb-2 group-hover:text-purple-300 transition-colors">
+                              {election.name}
+                            </h3>
+                            <p className="text-sm text-purple-300 font-medium">
+                              {election.category} Election
+                            </p>
+                          </div>
+
+                          {/* Stats Grid - Now showing actual vote count */}
+                          <div className="grid grid-cols-2 gap-4">
+                            <div className="text-center p-3 bg-white/5 rounded-lg">
+                              <Users className="w-5 h-5 text-blue-400 mx-auto mb-1" />
+                              <p className="text-sm text-gray-300">Total Votes</p>
+                              <p className="font-bold text-white">{election.totalVotes.toLocaleString()}</p>
+                            </div>
+                            <div className="text-center p-3 bg-white/5 rounded-lg">
+                              <Award className="w-5 h-5 text-purple-400 mx-auto mb-1" />
+                              <p className="text-sm text-gray-300">Candidates</p>
+                              <p className="font-bold text-white">{election.candidateCount}</p>
+                            </div>
+                          </div>
+
+                          {/* Election Details */}
+                          <div className="space-y-2 text-sm">
+                            <div className="flex items-center justify-between">
+                              <span className="text-gray-400">Type:</span>
+                              <span className="text-white font-medium">
+                                {election.isPublic ? 'Public' : 'Private'}
+                              </span>
+                            </div>
+                            <div className="flex items-center justify-between">
+                              <span className="text-gray-400">Ended:</span>
+                              <span className="text-white font-medium">
+                                {formatTime(election.endTime)}
+                              </span>
+                            </div>
+                          </div>
+
+                          {/* View Button */}
+                          <button className="w-full mt-4 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-200 flex items-center justify-center group-hover:scale-105">
+                            <Eye className="w-4 h-4 mr-2" />
+                            View Results
+                          </button>
+                        </div>
+                      </motion.div>
+                    ))}
                   </div>
-                </div>
-              )}
-              <div className="absolute inset-0 bg-black/20"></div>
-              
-              {/* Floating Status Badge */}
-              <div className="absolute top-4 right-4">
-                {getStatusBadge(election)}
-              </div>
-            </div>
-
-            {/* Card Content */}
-            <div className="p-6 space-y-4">
-              <div>
-                <h3 className="text-xl font-bold text-white mb-2 group-hover:text-purple-300 transition-colors">
-                  {election.name}
-                </h3>
-                <p className="text-sm text-purple-300 font-medium">
-                  {election.category} Election
-                </p>
-              </div>
-
-              {/* Stats Grid - Now showing actual vote count */}
-              <div className="grid grid-cols-2 gap-4">
-                <div className="text-center p-3 bg-white/5 rounded-lg">
-                  <Users className="w-5 h-5 text-blue-400 mx-auto mb-1" />
-                  <p className="text-sm text-gray-300">Total Votes</p>
-                  <p className="font-bold text-white">{election.totalVotes.toLocaleString()}</p>
-                </div>
-                <div className="text-center p-3 bg-white/5 rounded-lg">
-                  <Award className="w-5 h-5 text-purple-400 mx-auto mb-1" />
-                  <p className="text-sm text-gray-300">Candidates</p>
-                  <p className="font-bold text-white">{election.candidateCount}</p>
-                </div>
-              </div>
-
-              {/* Election Details */}
-              <div className="space-y-2 text-sm">
-                <div className="flex items-center justify-between">
-                  <span className="text-gray-400">Type:</span>
-                  <span className="text-white font-medium">
-                    {election.isPublic ? 'Public' : 'Private'}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-gray-400">Ended:</span>
-                  <span className="text-white font-medium">
-                    {formatTime(election.endTime)}
-                  </span>
-                </div>
-              </div>
-
-              {/* View Button */}
-              <button className="w-full mt-4 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-200 flex items-center justify-center group-hover:scale-105">
-                <Eye className="w-4 h-4 mr-2" />
-                View Results
-              </button>
-            </div>
-          </motion.div>
-        ))}
-      </div>
                 )}
 
                 {filteredElections.length === 0 && !loading && (
@@ -451,7 +547,12 @@ function Results() {
                     <div className="max-w-md mx-auto">
                       <Trophy className="w-16 h-16 text-gray-400 mx-auto mb-4" />
                       <h3 className="text-2xl font-bold text-gray-300 mb-2">No Elections Found</h3>
-                      <p className="text-gray-400">Try adjusting your search criteria or check back later for new election results.</p>
+                      <p className="text-gray-400">
+                        {searchTerm ? 
+                          'Try adjusting your search criteria or check back later for new election results.' :
+                          'No elections available for viewing. You may need to vote in an election or create one to see results here.'
+                        }
+                      </p>
                     </div>
                   </motion.div>
                 )}
@@ -485,22 +586,24 @@ function Results() {
                     </div>
                   </div>
                   
-                  <div className="flex items-center gap-3">
-                    <button
-                      onClick={shareResults}
-                      className="flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl transition-all"
-                    >
-                      <Share className="w-4 h-4 mr-2" />
-                      Share
-                    </button>
-                    <button
-                      onClick={exportToExcel}
-                      className="flex items-center px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-xl transition-all"
-                    >
-                      <Download className="w-4 h-4 mr-2" />
-                      Export
-                    </button>
-                  </div>
+                  {results && (
+                    <div className="flex items-center gap-3">
+                      <button
+                        onClick={shareResults}
+                        className="flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl transition-all"
+                      >
+                        <Share className="w-4 h-4 mr-2" />
+                        Share
+                      </button>
+                      <button
+                        onClick={exportToExcel}
+                        className="flex items-center px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-xl transition-all"
+                      >
+                        <Download className="w-4 h-4 mr-2" />
+                        Export
+                      </button>
+                    </div>
+                  )}
                 </div>
 
                 {loading ? (

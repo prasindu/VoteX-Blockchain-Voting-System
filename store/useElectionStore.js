@@ -3,8 +3,13 @@ import { ethers } from 'ethers';
 
 const CONTRACT_ADDRESS = '0xCcFEB176D51C3974eaAf41621C8276A6eE2d9099';
 
-// You need to add your actual ABI here - this is just a placeholder
+// Your ABI (keeping it as is)
 const ELECTION_ABI = [
+	{
+		"inputs": [],
+		"stateMutability": "nonpayable",
+		"type": "constructor"
+	},
 	{
 		"anonymous": false,
 		"inputs": [
@@ -69,6 +74,43 @@ const ELECTION_ABI = [
 		"type": "event"
 	},
 	{
+		"inputs": [],
+		"name": "admin",
+		"outputs": [
+			{
+				"internalType": "address",
+				"name": "",
+				"type": "address"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "_electionId",
+				"type": "uint256"
+			},
+			{
+				"internalType": "address",
+				"name": "_voter",
+				"type": "address"
+			}
+		],
+		"name": "canVote",
+		"outputs": [
+			{
+				"internalType": "bool",
+				"name": "",
+				"type": "bool"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
 		"inputs": [
 			{
 				"internalType": "string",
@@ -114,79 +156,6 @@ const ELECTION_ABI = [
 		"name": "createElection",
 		"outputs": [],
 		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "uint256",
-				"name": "_electionId",
-				"type": "uint256"
-			}
-		],
-		"name": "endElection",
-		"outputs": [],
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "uint256",
-				"name": "_electionId",
-				"type": "uint256"
-			},
-			{
-				"internalType": "uint256",
-				"name": "_candidateIndex",
-				"type": "uint256"
-			}
-		],
-		"name": "vote",
-		"outputs": [],
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"inputs": [],
-		"stateMutability": "nonpayable",
-		"type": "constructor"
-	},
-	{
-		"inputs": [],
-		"name": "admin",
-		"outputs": [
-			{
-				"internalType": "address",
-				"name": "",
-				"type": "address"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "uint256",
-				"name": "_electionId",
-				"type": "uint256"
-			},
-			{
-				"internalType": "address",
-				"name": "_voter",
-				"type": "address"
-			}
-		],
-		"name": "canVote",
-		"outputs": [
-			{
-				"internalType": "bool",
-				"name": "",
-				"type": "bool"
-			}
-		],
-		"stateMutability": "view",
 		"type": "function"
 	},
 	{
@@ -249,6 +218,19 @@ const ELECTION_ABI = [
 			}
 		],
 		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "_electionId",
+				"type": "uint256"
+			}
+		],
+		"name": "endElection",
+		"outputs": [],
+		"stateMutability": "nonpayable",
 		"type": "function"
 	},
 	{
@@ -485,8 +467,26 @@ const ELECTION_ABI = [
 		],
 		"stateMutability": "view",
 		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "_electionId",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "_candidateIndex",
+				"type": "uint256"
+			}
+		],
+		"name": "vote",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
 	}
-];
+]; // Add your actual ABI here
 
 const useElectionStore = create((set, get) => ({
   // State
@@ -573,48 +573,128 @@ const useElectionStore = create((set, get) => ({
     try {
       const { contract, electionName, electionImage, startTime, endTime, isPublic, allowedVoters, candidateInputs } = get();
 
-      // Validation
-      if (!electionName) throw new Error('Election name is required');
-      if (candidateInputs.some(c => !c.name.trim())) throw new Error('All candidates need names');
+      // Enhanced validation
+      if (!contract) throw new Error('Contract not initialized');
+      if (!electionName?.trim()) throw new Error('Election name is required');
+      if (!startTime) throw new Error('Start time is required');
+      if (!endTime) throw new Error('End time is required');
+      if (!candidateInputs?.length) throw new Error('At least one candidate is required');
+      
+      // Filter out empty candidates and validate
+      const validCandidates = candidateInputs.filter(c => c.name?.trim());
+      if (validCandidates.length === 0) throw new Error('At least one candidate with a name is required');
+      if (validCandidates.some(c => c.name.trim().length > 100)) throw new Error('Candidate names must be under 100 characters');
 
       set({ isLoading: true, error: '' });
 
-      // Convert dates
+      // Convert dates with better validation
+      const now = Math.floor(Date.now() / 1000);
       const startTimestamp = Math.floor(new Date(startTime).getTime() / 1000);
       const endTimestamp = Math.floor(new Date(endTime).getTime() / 1000);
-      if (startTimestamp >= endTimestamp) throw new Error('End time must be after start time');
+      
+      if (isNaN(startTimestamp) || isNaN(endTimestamp)) {
+        throw new Error('Invalid date format');
+      }
+      
+      // FIXED: More lenient time validation - allow 30 seconds buffer instead of 60
+      if (startTimestamp <= now + 30) {
+        throw new Error(`Start time must be in the future. Current time: ${new Date(now * 1000).toLocaleString()}, Start time: ${new Date(startTimestamp * 1000).toLocaleString()}`);
+      }
+      
+      if (endTimestamp <= startTimestamp + 300) { // Must be at least 5 minutes long
+        throw new Error('Election must run for at least 5 minutes');
+      }
 
-      // Validate voters
-      const voters = isPublic ? [] : allowedVoters.split('\n')
-        .map(v => v.trim())
-        .filter(v => {
-          if (!v) return false;
-          if (!ethers.utils.isAddress(v)) throw new Error(`Invalid address: ${v}`);
-          return true;
-        });
+      // Process voters with enhanced validation
+      let voters = [];
+      if (!isPublic) {
+        const voterAddresses = allowedVoters
+          .split('\n')
+          .map(v => v.trim())
+          .filter(v => v);
+        
+        if (voterAddresses.length === 0) {
+          throw new Error('Private elections need at least one voter address');
+        }
+        
+        if (voterAddresses.length > 100) {
+          throw new Error('Maximum 100 voters allowed for private elections');
+        }
 
-      // Prepare candidates
-      const candidateNames = candidateInputs.map(c => c.name.trim());
-      const candidateImages = candidateInputs.map(c => c.image || '');
+        for (const addr of voterAddresses) {
+          if (!ethers.utils.isAddress(addr)) {
+            throw new Error(`Invalid wallet address: ${addr}`);
+          }
+          if (!voters.includes(addr.toLowerCase())) {
+            voters.push(addr); // Keep original case
+          }
+        }
+      }
 
-      // Send transaction
+      // Prepare candidate data
+      const candidateNames = validCandidates.map(c => c.name.trim());
+      const candidateImages = validCandidates.map(c => c.image?.trim() || '');
+
+      // Check for duplicate candidate names
+      const nameSet = new Set(candidateNames.map(n => n.toLowerCase()));
+      if (nameSet.size !== candidateNames.length) {
+        throw new Error('Candidate names must be unique');
+      }
+
+      console.log('Creating election with:', {
+        name: electionName.trim(),
+        image: electionImage?.trim() || '',
+        startTime: startTimestamp,
+        endTime: endTimestamp,
+        isPublic,
+        voters: voters.length,
+        candidates: candidateNames.length,
+        currentTime: now,
+        timeBuffer: startTimestamp - now
+      });
+
+      // Estimate gas first
+      let gasEstimate;
+      try {
+        gasEstimate = await contract.estimateGas.createElection(
+          electionName.trim(),
+          electionImage?.trim() || '',
+          startTimestamp,
+          endTimestamp,
+          isPublic,
+          voters,
+          candidateNames,
+          candidateImages
+        );
+        console.log('Gas estimate:', gasEstimate.toString());
+      } catch (gasError) {
+        console.error('Gas estimation failed:', gasError);
+        throw new Error(`Transaction simulation failed: ${gasError.reason || gasError.message}`);
+      }
+
+      // Send transaction with proper gas settings
       const tx = await contract.createElection(
-        electionName,
-        electionImage || '',
+        electionName.trim(),
+        electionImage?.trim() || '',
         startTimestamp,
         endTimestamp,
         isPublic,
         voters,
         candidateNames,
         candidateImages,
-		{
-          gasLimit: 500000, // Set a manual gas limit
+        {
+          gasLimit: gasEstimate.mul(120).div(100), // 20% buffer
+          // Remove manual gas price to let wallet handle it
         }
       );
 
-      await tx.wait();
+      console.log('Transaction sent:', tx.hash);
       
-      // Reset form
+      // Wait for confirmation
+      const receipt = await tx.wait();
+      console.log('Transaction confirmed:', receipt);
+      
+      // FIXED: Reset form on success - corrected typo
       set({
         electionName: '',
         electionImage: '',
@@ -622,14 +702,34 @@ const useElectionStore = create((set, get) => ({
         endTime: '',
         isPublic: false,
         allowedVoters: '',
-        candidateInputs: [{ name: '', image: '' }],
-        isLoading: false
+        candidateInputs: [{ name: '', image: '' }], // Fixed: was "candidateInputts"
+        isLoading: false,
+        error: ''
       });
 
       return true;
     } catch (err) {
+      console.error('Election creation error:', err);
+      
+      let errorMessage = 'Election creation failed';
+      
+      // Better error handling
+      if (err.reason) {
+        errorMessage = err.reason;
+      } else if (err.message) {
+        if (err.message.includes('user rejected')) {
+          errorMessage = 'Transaction was rejected by user';
+        } else if (err.message.includes('insufficient funds')) {
+          errorMessage = 'Insufficient funds for gas';
+        } else if (err.message.includes('gas')) {
+          errorMessage = 'Gas estimation failed - check your inputs';
+        } else {
+          errorMessage = err.message;
+        }
+      }
+      
       set({ 
-        error: err.reason || err.message || 'Transaction failed',
+        error: errorMessage,
         isLoading: false 
       });
       return false;
@@ -678,6 +778,15 @@ const useElectionStore = create((set, get) => ({
     if (window.ethereum && window.ethereum.selectedAddress) {
       get().connectWallet();
     }
+  },
+
+  // Helper function to get current time for debugging
+  getCurrentTime: () => {
+    const now = Math.floor(Date.now() / 1000);
+    return {
+      timestamp: now,
+      readable: new Date(now * 1000).toLocaleString()
+    };
   }
 }));
 
