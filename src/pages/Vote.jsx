@@ -2,15 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import useElectionStore from '../../store/useElectionStore';
 import { motion, AnimatePresence } from 'framer-motion';
-import { getIPFSURL } from '../ipfs'; // Assuming this is the correct path
+import { getIPFSURL } from '../ipfs';
 
 function Vote() {
   const {
     contract,
     walletAddress: account,
     connectWallet,
-    electionId, // We'll use local state instead of this if setElectionId isn't a function
-    // setElectionId, // Commented out as it's causing the error
   } = useElectionStore();
 
   const navigate = useNavigate();
@@ -28,7 +26,6 @@ function Vote() {
   const [totalVotes, setTotalVotes] = useState(0);
   const [remainingTime, setRemainingTime] = useState(null);
   const [showElectionView, setShowElectionView] = useState(false);
-  // Adding local election ID state as a fallback
   const [currentElectionId, setCurrentElectionId] = useState(null);
 
   useEffect(() => {
@@ -66,7 +63,7 @@ function Vote() {
         setElections(list);
       } catch (err) {
         console.error('Error fetching elections:', err);
-        setMessage('❌ Error fetching elections');
+        setMessage('Error fetching elections. Please try again.');
       } finally {
         setLoading(false);
       }
@@ -86,7 +83,7 @@ function Vote() {
         name,
         imageHash: cands[1][index],
         index,
-        voteCount: 0 // Will be populated if results are available
+        voteCount: 0
       }));
       setCandidates(candidatesData);
 
@@ -107,12 +104,11 @@ function Vote() {
         }
       }
 
-      // Try to get total votes and results (if authorized)
+      // Try to get total votes and results
       try {
         const total = await contract.getTotalVotes(election.id);
         setTotalVotes(Number(total));
 
-        // If we can see total votes, try to get detailed results
         const results = await contract.getElectionResults(election.id);
         const updatedCandidates = candidatesData.map((candidate, index) => ({
           ...candidate,
@@ -134,7 +130,7 @@ function Vote() {
 
     } catch (err) {
       console.error('Error fetching election details:', err);
-      setMessage('❌ Error fetching election details');
+      setMessage('Error fetching election details. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -145,11 +141,7 @@ function Vote() {
 
     setLoadingVoters(true);
     try {
-      const votersList = [];
-
       if (election.isPublic) {
-        // For public elections, we need to track voters through events or other means
-        // Since we can't enumerate all possible addresses, we'll show a message
         setVoters([{
           address: 'PUBLIC_ELECTION',
           hasVoted: null,
@@ -157,28 +149,13 @@ function Vote() {
           isPublic: true
         }]);
       } else {
-        // For private elections, get the allowed voters list
-        const electionData = await contract.elections(election.id);
-        
-        // This approach depends on your contract having a way to get allowed voters
-        // Since the contract doesn't expose allowedVoters array directly, 
-        // we'll need to use events or modify the contract
-        
-        // For now, let's try to get voters through events or alternative method
-        try {
-          // Alternative: Check if we can get voter info through iteration
-          // This is not efficient for large voter lists
-          setVoters([{
-            address: 'PRIVATE_ELECTION',
-            hasVoted: null,
-            voteChoice: null,
-            isPrivate: true,
-            note: 'Voter list not accessible through current contract interface'
-          }]);
-        } catch (err) {
-          console.log('Could not fetch voters list:', err);
-          setVoters([]);
-        }
+        setVoters([{
+          address: 'PRIVATE_ELECTION',
+          hasVoted: null,
+          voteChoice: null,
+          isPrivate: true,
+          note: 'Voter list restricted for private elections'
+        }]);
       }
     } catch (err) {
       console.error('Error fetching voters:', err);
@@ -190,16 +167,7 @@ function Vote() {
 
   const handleElectionClick = async (election) => {
     setSelectedElection(election);
-    // Use our local state instead of the store function
     setCurrentElectionId(election.id);
-    // Only try to use setElectionId if it's a function
-    // try {
-    //   if (typeof setElectionId === 'function') {
-    //     setElectionId(election.id);
-    //   }
-    // } catch (error) {
-    //   console.warn('setElectionId is not available:', error);
-    // }
     setShowElectionView(true);
     setMessage('');
     setSelectedCandidate('');
@@ -217,18 +185,16 @@ function Vote() {
       setLoading(true);
       await contract.vote(selectedElection.id, selectedCandidate);
       setHasVoted(true);
-      setMessage('✅ Vote submitted successfully!');
+      setMessage('Vote submitted successfully!');
       
-      // Refresh election details to update vote counts
       await fetchElectionDetails(selectedElection);
       
-      // Optionally navigate to results after a delay
       setTimeout(() => {
         navigate('/results');
       }, 3000);
     } catch (err) {
       console.error(err);
-      setMessage('❌ Vote failed. You may have already voted or the election is not active.');
+      setMessage('Vote failed. You may have already voted or the election is not active.');
     } finally {
       setLoading(false);
     }
@@ -244,13 +210,13 @@ function Vote() {
     const currentTime = Math.floor(Date.now() / 1000);
 
     if (election.ended) {
-      return <span className="px-3 py-1 bg-gray-500 text-white rounded-full text-sm">Ended</span>;
+      return <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-800">Ended</span>;
     } else if (currentTime < election.startTime) {
-      return <span className="px-3 py-1 bg-blue-500 text-white rounded-full text-sm">Upcoming</span>;
+      return <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">Upcoming</span>;
     } else if (election.isActive) {
-      return <span className="px-3 py-1 bg-green-500 text-white rounded-full text-sm">Active</span>;
+      return <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">Active</span>;
     } else {
-      return <span className="px-3 py-1 bg-red-500 text-white rounded-full text-sm">Inactive</span>;
+      return <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-red-100 text-red-800">Inactive</span>;
     }
   };
 
@@ -279,16 +245,19 @@ function Vote() {
 
   if (!account) {
     return (
-      <div className="min-h-screen bg-gradient-to-r from-blue-600 to-indigo-800 text-white flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-indigo-900 via-blue-900 to-purple-900 flex items-center justify-center p-4">
         <motion.div
-          className="text-center"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
+          className="text-center bg-white/10 backdrop-blur-lg rounded-2xl p-8 border border-white/20"
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.5 }}
         >
-          <h2 className="text-3xl font-bold mb-4">Please connect your wallet to vote</h2>
+          <div className="text-6xl mb-4">🔐</div>
+          <h2 className="text-3xl font-bold text-white mb-4">Wallet Connection Required</h2>
+          <p className="text-white/80 mb-6">Connect your wallet to participate in voting</p>
           <button 
             onClick={connectWallet}
-            className="px-6 py-3 bg-white text-blue-600 rounded-lg font-semibold hover:bg-gray-100 transition"
+            className="px-8 py-3 bg-white text-indigo-900 rounded-xl font-semibold hover:bg-white/90 transition-colors duration-200 shadow-lg"
           >
             Connect Wallet
           </button>
@@ -298,10 +267,9 @@ function Vote() {
   }
 
   return (
-    
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 text-white px-4 py-8">
-      {/* Animated background particles */}
-      <div className="fixed inset-0 overflow-hidden pointer-events-none">
+    <div className="min-h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-900 text-white">
+      {/* Subtle animated background */}
+     <div className="fixed inset-0 overflow-hidden pointer-events-none">
         {[...Array(50)].map((_, i) => (
           <motion.div
             key={i}
@@ -322,84 +290,121 @@ function Vote() {
           />
         ))}
       </div>
-      <div className="max-w-7xl mx-auto mt-12">
+
+      <div className="relative max-w-7xl mx-auto px-4 py-8">
         <AnimatePresence mode="wait">
           {!showElectionView ? (
             // Elections List View
             <motion.div
               key="elections-list"
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -20 }}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.4 }}
             >
-              <h1 className="text-xl md:text-5xl font-bold bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-center mb-12 text-transparent mb-4 mt-10">🗳️ Available Elections</h1>
+              <div className="text-center mb-12 pt-8">
+                <motion.div
+                  initial={{ opacity: 0, y: -20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.2 }}
+                  className="text-6xl mb-4"
+                >
+                  🗳️
+                </motion.div>
+                <h1 className="text-4xl md:text-6xl font-bold bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent mb-4">
+                  Elections
+                </h1>
+                <p className="text-xl text-white/70">Choose an election to participate in</p>
+              </div>
 
               {loading && (
-                <div className="text-center py-8">
-                  <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
-                  <p className="mt-2">Loading elections...</p>
+                <div className="text-center py-12">
+                  <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-white/30 border-t-white"></div>
+                  <p className="mt-4 text-white/70">Loading elections...</p>
                 </div>
               )}
 
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8 ">
-                {elections.map((election, index) => (
-                  <motion.div
-                    key={election.id}
-                    className="bg-white bg-opacity-10 backdrop-blur-md rounded-xl shadow-xl overflow-hidden cursor-pointer hover:bg-opacity-20 transition-all duration-300 transform hover:scale-105"
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: index * 0.1 }}
-                    onClick={() => handleElectionClick(election)}
-                  >
-                    <div className="h-48 group relative bg-white/10 backdrop-blur-md rounded-2xl overflow-hidden border border-white/20 hover:border-white/40 transition-all duration-300 cursor-pointer ">
-                      {election.imageHash ? (
-                        <img
-                          src={getIPFSURL(election.imageHash)}
-                          alt={election.name}
-                          className="w-full h-full object-cover"
-                          onError={(e) => {
-                            e.target.src = `data:image/svg+xml,${encodeURIComponent(`
-                              <svg width="200" height="200" xmlns="http://www.w3.org/2000/svg">
-                                <rect width="200" height="200" fill="#f0f0f0"/>
-                                <text x="100" y="100" text-anchor="middle" dy=".3em" font-family="sans-serif" font-size="16" fill="#666">
-                                  No Image
-                                </text>
-                              </svg>
-                            `)}`;
-                          }}
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center  text-gray-600">
-                          <span className="text-lg">No Image</span>
+              {elections.length > 0 && (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+                  {elections.map((election, index) => (
+                    <motion.div
+                      key={election.id}
+                      className="bg-white/10 backdrop-blur-lg rounded-2xl overflow-hidden cursor-pointer hover:bg-white/20 transition-all duration-300 border border-white/20 hover:border-white/40"
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: index * 0.1 }}
+                      onClick={() => handleElectionClick(election)}
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                    >
+                      <div className="h-48 relative overflow-hidden">
+                        {election.imageHash ? (
+                          <img
+                            src={getIPFSURL(election.imageHash)}
+                            alt={election.name}
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              e.target.style.display = 'none';
+                              e.target.nextSibling.style.display = 'flex';
+                            }}
+                          />
+                        ) : null}
+                        <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-indigo-500/50 to-purple-500/50">
+                          <div className="text-center">
+                            <div className="text-4xl mb-2">📊</div>
+                            <span className="text-sm text-white/80">Election Image</span>
+                          </div>
                         </div>
-                      )}
-                    </div>
+                      </div>
 
-                    <div className="p-6 ">
-                      <div className="flex justify-between items-start mb-3">
-                        <h3 className="text-xl font-bold text-black line-clamp-2">{election.name}</h3>
-                        {getStatusBadge(election)}
+                      <div className="p-6">
+                        <div className="flex justify-between items-start mb-4">
+                          <h3 className="text-xl font-bold text-white line-clamp-2">{election.name}</h3>
+                          {getStatusBadge(election)}
+                        </div>
+                        
+                        <div className="space-y-3 text-sm">
+                          <div className="flex justify-between text-white/70">
+                            <span>Election ID:</span>
+                            <span className="font-mono">#{election.id}</span>
+                          </div>
+                          <div className="flex justify-between text-white/70">
+                            <span>Candidates:</span>
+                            <span>{election.candidateCount}</span>
+                          </div>
+                          <div className="flex justify-between text-white/70">
+                            <span>Type:</span>
+                            <span className={`px-2 py-1 rounded text-xs ${election.isPublic ? 'bg-green-500/20 text-green-300' : 'bg-blue-500/20 text-blue-300'}`}>
+                              {election.isPublic ? 'Public' : 'Private'}
+                            </span>
+                          </div>
+                          <div className="text-white/70">
+                            <div className="mb-1">Start: {formatTime(election.startTime)}</div>
+                            <div>End: {formatTime(election.endTime)}</div>
+                          </div>
+                          {election.canVote && (
+                            <div className="flex items-center text-green-400 font-medium">
+                              <span className="mr-2">✅</span>
+                              <span>Eligible to vote</span>
+                            </div>
+                          )}
+                        </div>
                       </div>
-                      
-                      <div className="space-y-2 text-sm text-gray-700">
-                        <p><span className="font-semibold">ID:</span> {election.id}</p>
-                        <p><span className="font-semibold">Candidates:</span> {election.candidateCount}</p>
-                        <p><span className="font-semibold">Type:</span> {election.isPublic ? 'Public' : 'Private'}</p>
-                        <p><span className="font-semibold">Start:</span> {formatTime(election.startTime)}</p>
-                        <p><span className="font-semibold">End:</span> {formatTime(election.endTime)}</p>
-                        {election.canVote && (
-                          <p className="text-green-600 font-semibold">✅ You can vote</p>
-                        )}
-                      </div>
-                    </div>
-                  </motion.div>
-                ))}
-              </div>
+                    </motion.div>
+                  ))}
+                </div>
+              )}
 
               {elections.length === 0 && !loading && (
-                <div className="text-center py-12">
-                  <p className="text-xl text-gray-300">No elections available</p>
-                </div>
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="text-center py-16"
+                >
+                  <div className="text-6xl mb-4">📭</div>
+                  <h3 className="text-2xl font-bold text-white mb-2">No Elections Available</h3>
+                  <p className="text-white/70">There are currently no elections to participate in.</p>
+                </motion.div>
               )}
             </motion.div>
           ) : (
@@ -408,96 +413,122 @@ function Vote() {
               key="election-detail"
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: 20 }}
+              exit={{ opacity: 0, x: -20 }}
+              transition={{ duration: 0.4 }}
             >
-              <div className="flex items-center justify-between mb-8">
+              <div className="flex items-center justify-between mb-8 pt-4">
                 <button
                   onClick={goBackToElections}
-                  className="flex items-center px-4 py-2 bg-white bg-opacity-20 rounded-lg text-black hover:bg-opacity-30 transition"
+                  className="flex items-center px-6 py-3 bg-white/10 backdrop-blur-lg rounded-xl text-white hover:bg-white/20 transition-colors duration-200 border border-white/20"
                 >
-                  ← Back to Elections
+                  <span className="mr-2">←</span>
+                  Back to Elections
                 </button>
-                <h1 className="text-3xl font-bold text-center">{selectedElection?.name}</h1>
-                <div className="w-32"></div> {/* Spacer for centering */}
+                <h1 className="text-3xl font-bold text-center text-white">{selectedElection?.name}</h1>
+                <div className="w-32"></div>
               </div>
 
               {loading ? (
-                <div className="text-center py-8">
-                  <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
-                  <p className="mt-2">Loading election details...</p>
+                <div className="text-center py-12">
+                  <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-white/30 border-t-white"></div>
+                  <p className="mt-4 text-white/70">Loading election details...</p>
                 </div>
               ) : (
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                   {/* Election Info */}
-                  <div className="lg:col-span-1">
-                    <div className="bg-white bg-opacity-10 backdrop-blur-md rounded-xl p-6 mb-6">
-                      <h2 className="text-xl font-bold mb-4 text-black">Election Details</h2>
+                  <div className="lg:col-span-1 space-y-6">
+                    <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-6 border border-white/20">
+                      <h2 className="text-xl font-bold mb-4 text-white">Election Details</h2>
                       
                       {selectedElection?.imageHash && (
-                        <img
-                          src={getIPFSURL(selectedElection.imageHash)}
-                          alt={selectedElection.name}
-                          className="w-full h-48 object-cover rounded-lg mb-4"
-                          onError={(e) => e.target.style.display = 'none'}
-                        />
+                        <div className="mb-4">
+                          <img
+                            src={getIPFSURL(selectedElection.imageHash)}
+                            alt={selectedElection.name}
+                            className="w-full h-48 object-cover rounded-xl"
+                            onError={(e) => {
+                              e.target.style.display = 'none';
+                            }}
+                          />
+                        </div>
                       )}
                       
-                      <div className="space-y-3 text-sm text-gray-700">
-                        <div className="flex justify-between">
-                          <span className="font-semibold">Status:</span>
+                      <div className="space-y-4 text-sm">
+                        <div className="flex justify-between items-center">
+                          <span className="text-white/70">Status:</span>
                           {getStatusBadge(selectedElection)}
                         </div>
-                        <p><span className="font-semibold">ID:</span> {selectedElection?.id}</p>
-                        <p><span className="font-semibold">Type:</span> {selectedElection?.isPublic ? 'Public' : 'Private'}</p>
-                        <p><span className="font-semibold">Creator:</span> {selectedElection?.creator}</p>
+                        <div className="flex justify-between text-white/70">
+                          <span>Election ID:</span>
+                          <span className="font-mono text-white">#{selectedElection?.id}</span>
+                        </div>
+                        <div className="flex justify-between text-white/70">
+                          <span>Type:</span>
+                          <span className={`px-2 py-1 rounded text-xs ${selectedElection?.isPublic ? 'bg-green-500/20 text-green-300' : 'bg-blue-500/20 text-blue-300'}`}>
+                            {selectedElection?.isPublic ? 'Public' : 'Private'}
+                          </span>
+                        </div>
+                        <div className="text-white/70">
+                          <div className="mb-1">Creator:</div>
+                          <div className="font-mono text-xs text-white break-all">{selectedElection?.creator}</div>
+                        </div>
                         {totalVotes > 0 && (
-                          <p><span className="font-semibold">Total Votes:</span> {totalVotes}</p>
+                          <div className="flex justify-between text-white/70">
+                            <span>Total Votes:</span>
+                            <span className="font-bold text-white">{totalVotes}</span>
+                          </div>
                         )}
                         {remainingTime !== null && (
-                          <p className={`font-semibold ${remainingTime > 0 ? 'text-orange-300' : 'text-green-300'}`}>
+                          <div className={`p-3 rounded-xl ${remainingTime > 0 ? 'bg-orange-500/20 text-orange-300' : 'bg-green-500/20 text-green-300'}`}>
                             {remainingTime > 0 
                               ? `⏳ Time Remaining: ${formatDuration(remainingTime)}`
                               : '✅ Voting has ended'
                             }
-                          </p>
+                          </div>
                         )}
                         {hasVoted && userVoteChoice && (
-                          <div className="mt-4 p-3 bg-green-100 rounded-lg">
-                            <p className="text-green-800 font-semibold">
+                          <div className="p-3 bg-green-500/20 rounded-xl">
+                            <div className="text-green-300 font-medium">
                               ✅ You voted for: {userVoteChoice.candidateName}
-                            </p>
+                            </div>
                           </div>
                         )}
                       </div>
                     </div>
 
                     {/* Voters Section */}
-                    <div className="bg-white bg-opacity-10 backdrop-blur-md rounded-xl p-6">
+                    <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-6 border border-white/20">
                       <div className="flex items-center justify-between mb-4">
-                        <h2 className="text-xl font-bold text-black">Voter Information</h2>
+                        <h2 className="text-xl font-bold text-white">Voter Information</h2>
                         {loadingVoters && (
-                          <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                          <div className="animate-spin rounded-full h-5 w-5 border-2 border-white/30 border-t-white"></div>
                         )}
                       </div>
                       
                       {voters.length > 0 ? (
                         <div className="space-y-3">
                           {voters.map((voter, index) => (
-                            <div key={index} className="p-3 bg-white bg-opacity-20 rounded-lg">
+                            <div key={index} className="p-4 bg-white/5 rounded-xl border border-white/10">
                               {voter.isPublic ? (
-                                <p className="text-gray-700 text-sm">
-                                  📢 This is a public election. Anyone can vote.
-                                </p>
+                                <div className="text-center">
+                                  <div className="text-2xl mb-2">🌍</div>
+                                  <p className="text-white/80 text-sm">
+                                    This is a public election. Anyone can participate.
+                                  </p>
+                                </div>
                               ) : voter.isPrivate ? (
-                                <p className="text-gray-700 text-sm">
-                                  🔒 This is a private election. Voter list not publicly accessible.
-                                </p>
+                                <div className="text-center">
+                                  <div className="text-2xl mb-2">🔒</div>
+                                  <p className="text-white/80 text-sm">
+                                    This is a private election. Voter list is restricted.
+                                  </p>
+                                </div>
                               ) : (
                                 <div>
-                                  <p className="text-gray-700 text-sm font-mono">
+                                  <p className="text-white/80 text-sm font-mono break-all">
                                     {voter.address}
                                   </p>
-                                  <p className={`text-xs ${voter.hasVoted ? 'text-green-600' : 'text-gray-500'}`}>
+                                  <p className={`text-xs mt-1 ${voter.hasVoted ? 'text-green-400' : 'text-white/60'}`}>
                                     {voter.hasVoted ? '✅ Voted' : '⏳ Not voted'}
                                   </p>
                                 </div>
@@ -506,15 +537,15 @@ function Vote() {
                           ))}
                         </div>
                       ) : (
-                        <p className="text-gray-300 text-sm">No voter information available</p>
+                        <p className="text-white/60 text-sm text-center">No voter information available</p>
                       )}
                     </div>
                   </div>
 
                   {/* Candidates and Voting */}
                   <div className="lg:col-span-2">
-                    <div className="bg-white bg-opacity-10 backdrop-blur-md rounded-xl p-6">
-                      <h2 className="text-xl font-bold mb-6 text-black">
+                    <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-6 border border-white/20">
+                      <h2 className="text-2xl font-bold mb-6 text-white">
                         {hasVoted ? 'Election Results' : 'Select a Candidate'}
                       </h2>
 
@@ -523,102 +554,131 @@ function Vote() {
                           {candidates.map((candidate, index) => (
                             <motion.div
                               key={index}
-                              className={`border-2 rounded-lg p-4 transition-all ${
+                              className={`border-2 rounded-xl p-6 transition-all cursor-pointer ${
                                 hasVoted
                                   ? userVoteChoice?.candidateIndex === index
-                                    ? 'border-green-500 bg-green-50'
-                                    : 'border-gray-300'
+                                    ? 'border-green-400 bg-green-500/10'
+                                    : 'border-white/20 bg-white/5'
                                   : selectedCandidate === index
-                                    ? 'border-blue-500 bg-blue-50'
-                                    : 'border-gray-300 hover:border-gray-400 cursor-pointer'
+                                    ? 'border-blue-400 bg-blue-500/10'
+                                    : 'border-white/20 bg-white/5 hover:border-white/40 hover:bg-white/10'
                               }`}
                               onClick={() => !hasVoted && selectedElection?.canVote && remainingTime > 0 && setSelectedCandidate(index)}
-                              whileHover={!hasVoted ? { scale: 1.02 } : {}}
+                              whileHover={!hasVoted ? { scale: 1.01 } : {}}
+                              whileTap={!hasVoted ? { scale: 0.99 } : {}}
                             >
-                              <div className="flex items-center space-x-4">
-                                {candidate.imageHash && (
-                                  <img
-                                    src={getIPFSURL(candidate.imageHash)}
-                                    alt={candidate.name}
-                                    className="w-16 h-16 object-cover rounded-full"
-                                    onError={(e) => {
-                                      e.target.src = `data:image/svg+xml,${encodeURIComponent(`
-                                        <svg width="64" height="64" xmlns="http://www.w3.org/2000/svg">
-                                          <circle cx="32" cy="32" r="32" fill="#f0f0f0"/>
-                                          <text x="32" y="32" text-anchor="middle" dy=".3em" font-family="sans-serif" font-size="12" fill="#666">
-                                            ${candidate.name.charAt(0)}
-                                          </text>
-                                        </svg>
-                                      `)}`;
-                                    }}
-                                  />
-                                )}
+                              <div className="flex items-center space-x-6">
+                                <div className="flex-shrink-0">
+                                  {candidate.imageHash ? (
+                                    <img
+                                      src={getIPFSURL(candidate.imageHash)}
+                                      alt={candidate.name}
+                                      className="w-16 h-16 object-cover rounded-full border-2 border-white/20"
+                                      onError={(e) => {
+                                        e.target.style.display = 'none';
+                                        e.target.nextSibling.style.display = 'flex';
+                                      }}
+                                    />
+                                  ) : null}
+                                  <div className="w-16 h-16 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-full flex items-center justify-center text-white font-bold text-xl border-2 border-white/20">
+                                    {candidate.name.charAt(0).toUpperCase()}
+                                  </div>
+                                </div>
+                                
                                 <div className="flex-1">
-                                  <h3 className="font-semibold text-gray-800">{candidate.name}</h3>
+                                  <h3 className="text-xl font-semibold text-white mb-2">{candidate.name}</h3>
                                   {totalVotes > 0 && (
-                                    <div className="mt-2">
-                                      <div className="flex justify-between text-sm text-gray-600 mb-1">
+                                    <div className="space-y-2">
+                                      <div className="flex justify-between text-sm text-white/70">
                                         <span>{candidate.voteCount} votes</span>
                                         <span>{getVotePercentage(candidate.voteCount)}%</span>
                                       </div>
-                                      <div className="w-full bg-gray-200 rounded-full h-2">
-                                        <div
-                                          className="bg-blue-600 h-2 rounded-full transition-all duration-300"
-                                          style={{ width: `${getVotePercentage(candidate.voteCount)}%` }}
-                                        ></div>
+                                      <div className="w-full bg-white/20 rounded-full h-3">
+                                        <motion.div
+                                          className="bg-gradient-to-r from-blue-500 to-purple-500 h-3 rounded-full"
+                                          initial={{ width: 0 }}
+                                          animate={{ width: `${getVotePercentage(candidate.voteCount)}%` }}
+                                          transition={{ duration: 1, delay: index * 0.1 }}
+                                        />
                                       </div>
                                     </div>
                                   )}
                                 </div>
-                                {!hasVoted && selectedCandidate === index && (
-                                  <div className="text-blue-600 font-semibold">✓ Selected</div>
-                                )}
-                                {hasVoted && userVoteChoice?.candidateIndex === index && (
-                                  <div className="text-green-600 font-semibold">✅ Your Vote</div>
-                                )}
+                                
+                                <div className="flex-shrink-0">
+                                  {!hasVoted && selectedCandidate === index && (
+                                    <div className="text-blue-400 font-semibold text-lg">✓</div>
+                                  )}
+                                  {hasVoted && userVoteChoice?.candidateIndex === index && (
+                                    <div className="text-green-400 font-semibold text-lg">✅</div>
+                                  )}
+                                </div>
                               </div>
                             </motion.div>
                           ))}
                         </div>
                       ) : (
-                        <p className="text-gray-300">Loading candidates...</p>
+                        <div className="text-center py-8">
+                          <div className="text-4xl mb-4">👥</div>
+                          <p className="text-white/60">Loading candidates...</p>
+                        </div>
                       )}
 
                       {/* Voting Button */}
                       {!hasVoted && selectedElection?.canVote && remainingTime > 0 && (
                         <div className="mt-8 text-center">
-                          <button
+                          <motion.button
                             onClick={voteHandler}
                             disabled={selectedCandidate === '' || loading}
-                            className={`px-8 py-3 rounded-lg font-semibold transition ${
+                            className={`px-12 py-4 rounded-xl font-semibold text-lg transition-all ${
                               selectedCandidate === '' || loading
-                                ? 'bg-gray-400 text-gray-200 cursor-not-allowed'
-                                : 'bg-green-600 text-white hover:bg-green-700'
+                                ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
+                                : 'bg-gradient-to-r from-green-500 to-emerald-500 text-white hover:from-green-600 hover:to-emerald-600 shadow-lg'
                             }`}
+                            whileHover={selectedCandidate !== '' && !loading ? { scale: 1.05 } : {}}
+                            whileTap={selectedCandidate !== '' && !loading ? { scale: 0.95 } : {}}
                           >
-                            {loading ? 'Submitting Vote...' : '🗳️ Submit Vote'}
-                          </button>
+                            {loading ? (
+                              <div className="flex items-center">
+                                <div className="animate-spin rounded-full h-5 w-5 border-2 border-white/30 border-t-white mr-2"></div>
+                                Submitting Vote...
+                              </div>
+                            ) : (
+                              <>🗳️ Submit Vote</>
+                            )}
+                          </motion.button>
                         </div>
                       )}
 
                       {hasVoted && (
                         <div className="mt-8 text-center">
-                          <button
+                          <motion.button
                             onClick={() => navigate('/results')}
-                            className="px-8 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+                            className="px-12 py-4 bg-gradient-to-r from-blue-500 to-indigo-500 text-white rounded-xl hover:from-blue-600 hover:to-indigo-600 transition-all font-semibold text-lg shadow-lg"
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.95 }}
                           >
-                            View Full Results
-                          </button>
+                            📊 View Full Results
+                          </motion.button>
                         </div>
                       )}
 
                       {message && (
                         <motion.div
                           className="mt-6 text-center"
-                          initial={{ opacity: 0 }}
-                          animate={{ opacity: 1 }}
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: -10 }}
                         >
-                          <p className="text-lg font-medium text-white">{message}</p>
+                          <div className={`inline-block px-6 py-3 rounded-xl font-medium ${
+                            message.includes('successfully') || message.includes('Success')
+                              ? 'bg-green-500/20 text-green-300 border border-green-500/30'
+                              : message.includes('Error') || message.includes('failed')
+                              ? 'bg-red-500/20 text-red-300 border border-red-500/30'
+                              : 'bg-blue-500/20 text-blue-300 border border-blue-500/30'
+                          }`}>
+                            {message}
+                          </div>
                         </motion.div>
                       )}
                     </div>
