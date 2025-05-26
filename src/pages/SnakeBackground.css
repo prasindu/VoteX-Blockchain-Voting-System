@@ -1,0 +1,21 @@
+.spark {
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  background: radial-gradient(circle, #ffffffcc 0%, #ffffff00 70%);
+  border-radius: 50%;
+  pointer-events: none;
+  animation: sparkFade 0.5s ease-out forwards;
+  z-index: 100;
+}
+
+@keyframes sparkFade {
+  0% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(2);
+  }
+}
