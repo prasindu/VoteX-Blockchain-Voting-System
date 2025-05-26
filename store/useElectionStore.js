@@ -1,15 +1,10 @@
 import { create } from 'zustand';
 import { ethers } from 'ethers';
 
-const CONTRACT_ADDRESS = '0xCcFEB176D51C3974eaAf41621C8276A6eE2d9099';
+const CONTRACT_ADDRESS = '0x2296060a387D26F37b1Ee12c2673c486E75710E3';
 
 // Your ABI (keeping it as is)
 const ELECTION_ABI = [
-	{
-		"inputs": [],
-		"stateMutability": "nonpayable",
-		"type": "constructor"
-	},
 	{
 		"anonymous": false,
 		"inputs": [
@@ -74,43 +69,6 @@ const ELECTION_ABI = [
 		"type": "event"
 	},
 	{
-		"inputs": [],
-		"name": "admin",
-		"outputs": [
-			{
-				"internalType": "address",
-				"name": "",
-				"type": "address"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "uint256",
-				"name": "_electionId",
-				"type": "uint256"
-			},
-			{
-				"internalType": "address",
-				"name": "_voter",
-				"type": "address"
-			}
-		],
-		"name": "canVote",
-		"outputs": [
-			{
-				"internalType": "bool",
-				"name": "",
-				"type": "bool"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
 		"inputs": [
 			{
 				"internalType": "string",
@@ -156,6 +114,79 @@ const ELECTION_ABI = [
 		"name": "createElection",
 		"outputs": [],
 		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "_electionId",
+				"type": "uint256"
+			}
+		],
+		"name": "endElection",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "_electionId",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "_candidateIndex",
+				"type": "uint256"
+			}
+		],
+		"name": "vote",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"stateMutability": "nonpayable",
+		"type": "constructor"
+	},
+	{
+		"inputs": [],
+		"name": "admin",
+		"outputs": [
+			{
+				"internalType": "address",
+				"name": "",
+				"type": "address"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "_electionId",
+				"type": "uint256"
+			},
+			{
+				"internalType": "address",
+				"name": "_voter",
+				"type": "address"
+			}
+		],
+		"name": "canVote",
+		"outputs": [
+			{
+				"internalType": "bool",
+				"name": "",
+				"type": "bool"
+			}
+		],
+		"stateMutability": "view",
 		"type": "function"
 	},
 	{
@@ -218,19 +249,6 @@ const ELECTION_ABI = [
 			}
 		],
 		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "uint256",
-				"name": "_electionId",
-				"type": "uint256"
-			}
-		],
-		"name": "endElection",
-		"outputs": [],
-		"stateMutability": "nonpayable",
 		"type": "function"
 	},
 	{
@@ -466,24 +484,6 @@ const ELECTION_ABI = [
 			}
 		],
 		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "uint256",
-				"name": "_electionId",
-				"type": "uint256"
-			},
-			{
-				"internalType": "uint256",
-				"name": "_candidateIndex",
-				"type": "uint256"
-			}
-		],
-		"name": "vote",
-		"outputs": [],
-		"stateMutability": "nonpayable",
 		"type": "function"
 	}
 ]; // Add your actual ABI here
