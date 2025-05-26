@@ -142,6 +142,30 @@ function Admin() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-800 p-6">
+         <div className="fixed inset-0 overflow-hidden pointer-events-none">
+              {[...Array(50)].map((_, i) => (
+                <motion.div
+                  key={i}
+                  className="absolute w-2 h-2 bg-white rounded-full opacity-20"
+                  animate={{
+                    x: [0, Math.random() * 100 - 50],
+                    y: [0, Math.random() * 100 - 50],
+                  }}
+                  transition={{
+                    duration: Math.random() * 20 + 10,
+                    repeat: Infinity,
+                    repeatType: "reverse"
+                  }}
+                  style={{
+                    left: `${Math.random() * 100}%`,
+                    top: `${Math.random() * 100}%`,
+                  }}
+                />
+              ))
+             
+              }
+              
+            </div>
       <div className="container mx-auto max-w-4xl">
         <motion.div
           initial={{ opacity: 0, y: 40 }}
