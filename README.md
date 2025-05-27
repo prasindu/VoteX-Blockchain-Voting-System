@@ -10,7 +10,7 @@ Currently, two official plugins are available:
 
 How to Clone a Specific Branch
 
-git clone -b <branchname> <remote-repo-url>
+   git clone -b <branchname> <remote-repo-url>
 
 run command
 
