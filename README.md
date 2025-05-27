@@ -13,6 +13,7 @@ How to Clone a Specific Branch
 git clone -b <branchname> <remote-repo-url>
 
 run command
+
     npm install --legacy-peer-deps  
     npm run dev
   
