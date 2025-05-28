@@ -18,7 +18,6 @@ function Chatbot() {
 
     const lowerInput = input.toLowerCase();
 
-    // Simple keyword-based logic
     if (lowerInput.includes('result')) {
       try {
         const cands = await contract.getCandidates(electionId);
@@ -42,13 +41,37 @@ function Chatbot() {
             votes: Number(await contract.getVotes(electionId, c)),
           }))
         );
-        const winner = votes.reduce((max, curr) => curr.votes > max.votes ? curr : max, votes[0]);
+        const winner = votes.reduce((max, curr) => (curr.votes > max.votes ? curr : max), votes[0]);
         setMessages((prev) => [...prev, { type: 'bot', text: `🏆 Winner is ${winner.name} with ${winner.votes} votes.` }]);
       } catch (err) {
         setMessages((prev) => [...prev, { type: 'bot', text: 'Unable to determine the winner.' }]);
       }
     } else {
-      setMessages((prev) => [...prev, { type: 'bot', text: 'Sorry, I didn’t understand. Try asking about election results or the winner.' }]);
+      // Add a "thinking..." message
+      setMessages((prev) => [...prev, { type: 'bot', text: '🤔 Thinking...' }]);
+
+      try {
+        const res = await fetch('http://localhost:5000/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message: input }),
+        });
+
+        const data = await res.json();
+
+        // Replace the "Thinking..." message with the real response
+        setMessages((prev) => {
+          const updated = [...prev];
+          updated[updated.length - 1] = { type: 'bot', text: data.reply };
+          return updated;
+        });
+      } catch (err) {
+        console.error('AI error:', err);
+        setMessages((prev) => [
+          ...prev,
+          { type: 'bot', text: 'Sorry, I couldn’t process your question right now.' },
+        ]);
+      }
     }
 
     setInput('');
@@ -61,7 +84,9 @@ function Chatbot() {
         {messages.map((msg, idx) => (
           <motion.div
             key={idx}
-            className={`mb-2 p-2 rounded-lg ${msg.type === 'user' ? 'bg-blue-200 text-right' : 'bg-gray-200 text-left'}`}
+            className={`mb-2 p-2 rounded-lg ${
+              msg.type === 'user' ? 'bg-blue-200 text-right' : 'bg-gray-200 text-left'
+            }`}
             initial={{ opacity: 0, x: msg.type === 'user' ? 50 : -50 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.3 }}

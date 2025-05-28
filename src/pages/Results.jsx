@@ -7,6 +7,7 @@ import { Download, FileText, BarChart3, PieChart as PieChartIcon, Users, Trophy,
 import { getIPFSURL } from '../ipfs';
 import * as XLSX from 'xlsx';
 
+
 function Results() {
   const {
     contract,
@@ -24,6 +25,21 @@ function Results() {
   const [showElectionView, setShowElectionView] = useState(false);
   const [chartType, setChartType] = useState('bar');
   const [searchTerm, setSearchTerm] = useState('');
+  const [chatOpen, setChatOpen] = useState(false);
+  const [chatMessages, setChatMessages] = useState([]);
+  const [chatInput, setChatInput] = useState('');
+  const [electionSummary, setElectionSummary] = useState('');
+  const [isBotTyping, setIsBotTyping] = useState(false);
+  const [isMinimized, setIsMinimized] = useState(false);
+
+  const [totalVoters, setTotalVoters] = useState(0);
+  const [votesCast, setVotesCast] = useState(0);
+  const [voters, setVoters] = useState([]); // Initialize as empty array
+
+
+
+
+
 
   // Enhanced color palette with gradients
   const COLORS = [
@@ -96,6 +112,8 @@ function Results() {
       return false;
     }
   };
+
+
 
   const fetchElections = async () => {
     if (!contract) return;
@@ -280,6 +298,69 @@ function Results() {
     }
   };
 
+  const handleStartChat = async () => {
+    if (!results) return;
+
+    const summary = results.candidates.map(
+      (c, idx) => `${idx + 1}. ${c.name} - ${c.voteCount} votes (${c.percentage}%)`
+    ).join('\n');
+
+    const introMessage = `Here are the election results:\n\n${summary}`;
+    setElectionSummary(introMessage);
+
+    try {
+      const res = await fetch('http://localhost:5000/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: introMessage })
+      });
+
+      const data = await res.json();
+      setChatMessages([
+        { sender: 'bot', text: data.reply }
+      ]);
+      setChatOpen(true);
+    } catch (err) {
+      console.error('Chat start error:', err);
+      setChatMessages([{ sender: 'bot', text: '❌ Failed to start chatbot. Please try again later.' }]);
+      setChatOpen(true);
+    }
+  };
+
+  const handleSendChat = async () => {
+    if (!chatInput.trim()) return;
+
+    const userMessage = { sender: 'user', text: chatInput };
+    setChatMessages((prev) => [...prev, userMessage]);
+    setChatInput('');
+    setIsBotTyping(true); // ✅ Show typing animation
+
+    try {
+      const res = await fetch('http://localhost:5000/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message: `${electionSummary}\n\nUser Question: ${chatInput}`,
+        }),
+      });
+
+      const data = await res.json();
+
+      setChatMessages((prev) => [...prev, { sender: 'bot', text: data.reply }]);
+    } catch (err) {
+      console.error('Chat send error:', err);
+      setChatMessages((prev) => [
+        ...prev,
+        { sender: 'bot', text: '❌ AI failed to respond. Please try again later.' },
+      ]);
+    } finally {
+      setIsBotTyping(false); // ✅ Hide typing animation
+    }
+  };
+
+
+
+
   const filteredElections = elections.filter(election => 
     election.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
@@ -359,6 +440,28 @@ function Results() {
       </div>
     );
   }
+
+  const playBotSound = () => {
+    const audio = document.getElementById('bot-sound');
+    if (audio) {
+      audio.currentTime = 0;
+      audio.play().catch(e => {
+        // Optional: handle autoplay restrictions on some browsers
+        console.warn("Sound couldn't be played automatically:", e);
+      });
+    }
+  };
+
+  useEffect(() => {
+    if (chatMessages.length === 0) return;
+    const lastMsg = chatMessages[chatMessages.length - 1];
+    if (lastMsg.sender === 'bot') {
+      playBotSound();
+    }
+  }, [chatMessages]);
+
+
+
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 text-white ">
@@ -861,7 +964,7 @@ function Results() {
                         </table>
                       </div>
                     </motion.div>
-
+                    
                     {/* Action Buttons */}
                     <motion.div
                       className="flex flex-col sm:flex-row gap-4 justify-center items-center"
@@ -884,6 +987,14 @@ function Results() {
                         <Share className="w-5 h-5 mr-2" />
                         Share Results
                       </button>
+
+                      <button
+                        onClick={() => handleStartChat()}
+                        className="flex items-center px-8 py-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl transition-all"
+                      >
+                        🤖 Chat Bot
+                      </button>
+
                     </motion.div>
 
                     {/* Footer Note */}
@@ -921,6 +1032,91 @@ function Results() {
           </AnimatePresence>
         </div>
       </div>
+      {chatOpen && (
+        <div
+            className={`fixed bottom-6 right-6 w-[400px] ${
+              isMinimized ? 'h-[60px]' : 'h-[550px]'
+            } flex flex-col border border-gray-300 rounded-2xl shadow-2xl z-50 overflow-hidden transition-all duration-300`}
+            style={{ backgroundColor: '#270342' }}
+        >
+          
+          {/* Header */}
+          <div
+            className="flex items-center justify-between text-white px-4 py-3"
+            style={{ backgroundColor: '#2a1154' }}
+          >
+
+            <div className="font-semibold text-base flex items-center gap-2">
+              🤖 <span>Election Chatbot</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setIsMinimized(!isMinimized)}
+                className="text-lg font-bold hover:text-yellow-300"
+                title={isMinimized ? 'Restore' : 'Minimize'}
+              >
+                {isMinimized ? '🔼' : '🔽'}
+              </button>
+              <button
+                onClick={() => setChatOpen(false)}
+                className="text-lg font-bold hover:text-red-400"
+                title="Close"
+              >
+                ×
+              </button>
+            </div>
+          </div>
+
+
+          {!isMinimized && (
+            <>
+              {/* Messages */}
+              <div
+                className="flex-1 overflow-y-auto p-4  text-white space-y-3 text-sm scroll-smooth"
+                style={{ backgroundColor: '#270342' }}
+              >
+                {chatMessages.map((msg, idx) => (
+                  <div
+                    key={idx}
+                    className={`max-w-[80%] p-3 rounded-lg whitespace-pre-wrap ${
+                      msg.sender === 'user'
+                        ? 'ml-auto bg-indigo-100 text-right text-black'
+                        : 'bg-gray-200 text-left text-gray-800'
+                    }`}
+                  >
+                    {msg.text}
+                  </div>
+                ))}
+                {isBotTyping && (
+                  <div className="max-w-[80%] bg-gray-300 text-gray-700 text-sm p-3 rounded-lg animate-pulse">
+                    🤖 Bot is typing...
+                  </div>
+                )}
+              </div>
+
+              {/* Input */}
+              <div className="p-2 border-t flex bg-white">
+                <input
+                  value={chatInput}
+                  onChange={(e) => setChatInput(e.target.value)}
+                  className="flex-1 px-3 py-2 rounded-l-xl border border-gray-300 text-sm text-black focus:outline-none"
+                  placeholder="Ask something..."
+                />
+                <button
+                  onClick={handleSendChat}
+                  className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-r-xl text-sm font-medium"
+                >
+                  Send
+                </button>
+              </div>
+            </>
+          )}
+
+        </div>
+      )}
+      <audio id="bot-sound" src="/happy-pop-3-185288.mp3" preload="auto"></audio>
+
+
     </div>
   );
 }
