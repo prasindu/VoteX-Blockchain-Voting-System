@@ -1,9 +1,9 @@
 import { create } from 'zustand';
 import { ethers } from 'ethers';
 
-const CONTRACT_ADDRESS = '0x2296060a387D26F37b1Ee12c2673c486E75710E3';
+const CONTRACT_ADDRESS = '0x3a065Be8197fC1e877838bD737142922D71624D3';
 
-// Your ABI (keeping it as is)
+// Your updated ABI (add the new functions)
 const ELECTION_ABI = [
 	{
 		"anonymous": false,
@@ -246,6 +246,11 @@ const ELECTION_ABI = [
 				"internalType": "bool",
 				"name": "ended",
 				"type": "bool"
+			},
+			{
+				"internalType": "uint256",
+				"name": "totalEligibleVoters",
+				"type": "uint256"
 			}
 		],
 		"stateMutability": "view",
@@ -425,6 +430,79 @@ const ELECTION_ABI = [
 				"internalType": "uint256",
 				"name": "_electionId",
 				"type": "uint256"
+			}
+		],
+		"name": "getVoterParticipation",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "totalEligibleVoters",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "votesCast",
+				"type": "uint256"
+			},
+			{
+				"internalType": "address[]",
+				"name": "allowedVoters",
+				"type": "address[]"
+			},
+			{
+				"internalType": "address[]",
+				"name": "actualVoters",
+				"type": "address[]"
+			},
+			{
+				"internalType": "bool",
+				"name": "isPublic",
+				"type": "bool"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "_electionId",
+				"type": "uint256"
+			},
+			{
+				"internalType": "address[]",
+				"name": "voterAddresses",
+				"type": "address[]"
+			}
+		],
+		"name": "getVoterStatus",
+		"outputs": [
+			{
+				"internalType": "bool[]",
+				"name": "hasVotedStatus",
+				"type": "bool[]"
+			},
+			{
+				"internalType": "uint256[]",
+				"name": "voteChoices",
+				"type": "uint256[]"
+			},
+			{
+				"internalType": "bool[]",
+				"name": "isEligible",
+				"type": "bool[]"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "_electionId",
+				"type": "uint256"
 			},
 			{
 				"internalType": "address",
@@ -486,7 +564,7 @@ const ELECTION_ABI = [
 		"stateMutability": "view",
 		"type": "function"
 	}
-]; // Add your actual ABI here
+];
 
 const useElectionStore = create((set, get) => ({
   // State
@@ -567,6 +645,90 @@ const useElectionStore = create((set, get) => ({
       contract: null,
       isCorrectNetwork: false
     });
+  },
+
+  // New function to get voter participation data
+  getVoterParticipation: async (electionId) => {
+    try {
+      const { contract } = get();
+      if (!contract) throw new Error('Contract not initialized');
+
+      const participation = await contract.getVoterParticipation(electionId);
+      
+      return {
+        totalEligibleVoters: participation.totalEligibleVoters.toNumber(),
+        votesCast: participation.votesCast.toNumber(),
+        allowedVoters: participation.allowedVoters,
+        actualVoters: participation.actualVoters,
+        isPublic: participation.isPublic
+      };
+    } catch (err) {
+      console.error('Error fetching voter participation:', err);
+      throw err;
+    }
+  },
+
+  // New function to get voter status details
+  getVoterStatus: async (electionId, voterAddresses) => {
+    try {
+      const { contract } = get();
+      if (!contract) throw new Error('Contract not initialized');
+
+      const status = await contract.getVoterStatus(electionId, voterAddresses);
+      
+      return {
+        hasVotedStatus: status.hasVotedStatus,
+        voteChoices: status.voteChoices.map(choice => choice.toNumber()),
+        isEligible: status.isEligible
+      };
+    } catch (err) {
+      console.error('Error fetching voter status:', err);
+      throw err;
+    }
+  },
+
+  // New function to get complete voter data for results page
+  getCompleteVoterData: async (electionId) => {
+    try {
+      const { contract } = get();
+      if (!contract) throw new Error('Contract not initialized');
+
+      // Get participation data
+      const participation = await get().getVoterParticipation(electionId);
+      
+      let voterDetails = [];
+      
+      if (participation.isPublic) {
+        // For public elections, we can only show who actually voted
+        voterDetails = participation.actualVoters.map((address, index) => ({
+          address,
+          hasVoted: true,
+          status: 'Voted',
+          index: index + 1
+        }));
+      } else {
+        // For private elections, show all allowed voters and their status
+        const voterStatus = await get().getVoterStatus(electionId, participation.allowedVoters);
+        
+        voterDetails = participation.allowedVoters.map((address, index) => ({
+          address,
+          hasVoted: voterStatus.hasVotedStatus[index],
+          status: voterStatus.hasVotedStatus[index] ? 'Voted' : 'Not Voted',
+          index: index + 1,
+          isEligible: voterStatus.isEligible[index]
+        }));
+      }
+
+      return {
+        totalEligibleVoters: participation.isPublic ? 'Unlimited (Public)' : participation.totalEligibleVoters,
+        votesCast: participation.votesCast,
+        isPublic: participation.isPublic,
+        voterDetails
+      };
+    } catch (err) {
+      console.error('Error fetching complete voter data:', err);
+      throw err;
+    }
   },
 
   createElection: async () => {

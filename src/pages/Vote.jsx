@@ -296,7 +296,7 @@ function Vote() {
         <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-80 h-80 bg-indigo-500 rounded-full mix-blend-multiply filter blur-xl opacity-10 animate-pulse"></div>
       </div>
 
-      <div className="relative max-w-7xl mx-auto px-4 py-8">
+      <div className="relative max-w-7xl mx-auto px-4 py-8 pt-13">
         <AnimatePresence mode="wait">
           {!showElectionView ? (
             // Elections List View
