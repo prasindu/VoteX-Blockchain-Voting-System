@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Canvas } from '@react-three/fiber';
 import { ScrambleText } from './ScrambleText';
 import { loadFull } from 'tsparticles';
-import './home.css';
+import './Home.css';
 import Scene from './scene';
 import './SnakeBackground.css';
 import { useCallback } from 'react';
