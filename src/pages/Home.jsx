@@ -70,7 +70,7 @@ const faqs = [
   {
     name: "Prasindu Deshan",
     role: "Full Stack Developer",
-    img: "/p.JPG",
+    img: "/public/p.JPG",
     linkedin: "#",
     github: "#",
     twitter: "#",
