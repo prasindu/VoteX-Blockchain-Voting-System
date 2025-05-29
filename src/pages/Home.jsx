@@ -61,7 +61,7 @@ const faqs = [
   const teamMembers = [
   {
     name: "Suresh Bhanuka",
-    role: "Smart Contract Auditor",
+    role: "Blockchain Developer",
     img: "/public/s.JPG",
     linkedin: "#",
     github: "#",
@@ -69,7 +69,7 @@ const faqs = [
   },
   {
     name: "Prasindu Deshan",
-    role: "Blockchain Developer",
+    role: "Full Stack Developer",
     img: "/p.JPG",
     linkedin: "#",
     github: "#",
