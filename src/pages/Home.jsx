@@ -110,7 +110,7 @@ const faqs = [
    {
     name: "Thamara Bhagya",
     role: "Security & Penetration Tester",
-    img: "/t.jpeg`",
+    img: "/t.jpeg",
     linkedin: "#",
     github: "#",
     twitter: "#",
