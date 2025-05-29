@@ -5,6 +5,7 @@ import { Canvas } from '@react-three/fiber';
 import { ScrambleText } from './ScrambleText';
 import ScrambleText2 from "./ScrambleText2";
 import { loadFull } from 'tsparticles';
+import { FaEnvelope,FaDiscord,FaLinkedin, FaGithub, FaTwitter, FaShieldAlt, FaVoteYea, FaUsers, FaChartBar, FaClock, FaLock } from "react-icons/fa";
 import './Home.css';
 import Scene from './scene';
 import './SnakeBackground.css';
@@ -24,6 +25,17 @@ function Home() {
   "M100,20 L100,200 L300,200 L300,50",
   "M50,250 L400,250 L400,50 L200,50",
 ];
+
+const cardVariants = {
+  hidden: { opacity: 0, y: 50 },
+  visible: (i) => ({
+    opacity: 1,
+    y: 0,
+    transition: { delay: i * 0.2, duration: 0.6, ease: "easeOut" },
+  }),
+};
+
+
 const faqs = [
   {
     question: "What is this voting system built on?",
@@ -47,107 +59,73 @@ const faqs = [
   },
 ];
   const teamMembers = [
-  { name: "Alice", role: "Blockchain Dev", img: "/team/alice.jpg" },
-  { name: "Bob", role: "Frontend Dev", img: "/team/bob.jpg" },
-  { name: "Charlie", role: "Smart Contract Auditor", img: "/team/charlie.jpg" },
-  { name: "Diana", role: "UI/UX Designer", img: "/team/diana.jpg" },
-  { name: "Eve", role: "Backend Dev", img: "/team/eve.jpg" },
-  { name: "Frank", role: "Project Manager", img: "/team/frank.jpg" },
-  { name: "Grace", role: "QA Engineer", img: "/team/grace.jpg" },
+  {
+    name: "Suresh Bhanuka",
+    role: "Smart Contract Auditor",
+    img: "/public/s.JPG",
+    linkedin: "#",
+    github: "#",
+    twitter: "#",
+  },
+  {
+    name: "Prasindu Deshan",
+    role: "Blockchain Developer",
+    img: "/public/p.JPG",
+    linkedin: "#",
+    github: "#",
+    twitter: "#",
+  },
+  {
+    name: "Dinushka Malshan",
+    role: "Full Stack Developer",
+    img: "/public/d.JPG",
+    linkedin: "#",
+    github: "#",
+    twitter: "#",
+  },
+  {
+    name: "Damindu Prasadith",
+    role: "Frontend Engineer",
+    img: "/public/d2.JPG",
+    linkedin: "#",
+    github: "#",
+    twitter: "#",
+  },
+   {
+    name: "Chamoda Deshan",
+    role: "Deployment Engineer",
+    img: "/public/ch.JPG",
+    linkedin: "#",
+    github: "#",
+    twitter: "#",
+  },
+   {
+    name: "Sandun Amantha",
+    role: "UI/UX Designer",
+    img: "/public/a.JPEG",
+    linkedin: "#",
+    github: "#",
+    twitter: "#",
+  },
+   {
+    name: "Thamara Bhagya",
+    role: "Security & Penetration Tester",
+    img: "/public/t.JPEG",
+    linkedin: "#",
+    github: "#",
+    twitter: "#",
+  },
 ];
 
-const cardVariants = {
-  hidden: { opacity: 0, y: 30 },
-  visible: (i) => ({
-    opacity: 1,
-    y: 0,
-    transition: { delay: i * 0.2 },
-  }),
-};
 
 
 const features = [
-  {
-    title: "Secure Voting",
-    description:
-      "Blockchain-powered, tamper-proof votes ensure absolute integrity and transparency.",
-    icon: (
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        className="h-10 w-10 text-blue-400"
-        fill="none"
-        viewBox="0 0 24 24"
-        stroke="currentColor"
-      >
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2l4-4" />
-      </svg>
-    ),
-  },
-  {
-    title: "Real-Time Results",
-    description:
-      "Instantly view live election outcomes powered by smart contract automation.",
-    icon: (
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        className="h-10 w-10 text-green-400"
-        fill="none"
-        viewBox="0 0 24 24"
-        stroke="currentColor"
-      >
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 17l-5-5m0 0l5-5m-5 5h12" />
-      </svg>
-    ),
-  },
-  {
-    title: "User-Friendly Interface",
-    description:
-      "Intuitive UI with smooth animations makes voting easy for everyone.",
-    icon: (
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        className="h-10 w-10 text-purple-400"
-        fill="none"
-        viewBox="0 0 24 24"
-        stroke="currentColor"
-      >
-        <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth={2} />
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6l4 2" />
-      </svg>
-    ),
-  },
-   {
-    title: "Secure Voting",
-    description:
-      "Blockchain-powered, tamper-proof votes ensure absolute integrity and transparency.",
-    icon: (
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        className="h-10 w-10 text-blue-400"
-        fill="none"
-        viewBox="0 0 24 24"
-        stroke="currentColor"
-      >
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2l4-4" />
-      </svg>
-    ),
-  },
-   {
-    title: "Secure Voting",
-    description:
-      "Blockchain-powered, tamper-proof votes ensure absolute integrity and transparency.",
-    icon: (
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        className="h-10 w-10 text-blue-400"
-        fill="none"
-        viewBox="0 0 24 24"
-        stroke="currentColor"
-      >
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2l4-4" />
-      </svg>
-    ),
-  },
+  { title: "Secure Voting", description: "End-to-end encrypted and tamper-proof.", icon: <FaShieldAlt /> },
+  { title: "One-Person-One-Vote", description: "Linked with wallet, no duplicates.", icon: <FaVoteYea /> },
+  { title: "Decentralized", description: "No central authority control.", icon: <FaUsers /> },
+  { title: "Live Results", description: "Visual real-time vote counts.", icon: <FaChartBar /> },
+  { title: "Timed Elections", description: "Automatic open and close.", icon: <FaClock /> },
+  { title: "Private Elections", description: "Whitelist-based access control.", icon: <FaLock /> },
 ];
 
   const buttonColors =  {
@@ -301,79 +279,79 @@ const features = [
 </div>
 <section
   className="relative py-20 min-h-screen"
-  style={{ backgroundAttachment: "fixed", backgroundImage: "url('/your-background.jpg')", backgroundSize: 'cover', backgroundPosition: 'center' }} // Parallax background image
+  style={{
+    backgroundAttachment: "fixed",
+    backgroundImage: "url('/your-background.jpg')",
+    backgroundSize: "cover",
+    backgroundPosition: "center",
+  }}
 >
-  {/* Dark overlay */}
-  
- <div className="absolute inset-0 overflow-hidden pointer-events-none -z-10">
-      {paths.map((d, i) => (
-        <svg
-          key={i}
-          width="100%"
-          height="100%"
-          viewBox="0 0 1024 300"
-          preserveAspectRatio="none"
-          className="absolute top-0 left-0"
-        >
-          <path d={d} className="trail-path" />
-        </svg>
-      ))}
+  {/* Neon Trails Background */}
+  <div className="absolute inset-0 overflow-hidden pointer-events-none -z-10">
+    {paths.map((d, i) => (
+      <svg
+        key={i}
+        width="100%"
+        height="100%"
+        viewBox="0 0 1024 300"
+        preserveAspectRatio="none"
+        className="absolute top-0 left-0"
+      >
+        <path d={d} className="trail-path" />
+      </svg>
+    ))}
+    {paths.map((d, i) => (
+      <div
+        key={`dot-${i}`}
+        className="neon-dot"
+        style={{
+          offsetPath: `path("${d}")`,
+          animation: `moveDot${(i % 2) + 1} ${8 + i * 2}s linear infinite`,
+        }}
+      />
+    ))}
+  </div>
 
-      {/* Neon dots with random animation */}
-      {paths.map((d, i) => (
-        <div
-          key={`dot-${i}`}
-          className="neon-dot"
-          style={{
-            offsetPath: `path("${d}")`,
-            animation: `moveDot${(i % 2) + 1} ${8 + i * 2}s linear infinite`,
-          }}
-        />
-      ))}
-    </div>
-
-{/* ------------------------ */}
-
+  {/* Section Content */}
   <div className="max-w-7xl mx-auto px-6 text-center">
     <motion.h2
       initial={{ opacity: 0, y: 40 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true }}
       transition={{ duration: 0.8 }}
-      className="text-4xl font-extrabold text-white mb-12"
+      className="text-4xl font-extrabold text-white mb-16 tracking-tight"
     >
       Key Features
     </motion.h2>
 
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
-      {features.slice(0, 5).map(({ title, description, icon }, i) => (
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-10">
+      {features.slice(0, 6).map(({ title, description, icon }, i) => (
         <motion.div
           key={i}
-          initial={{ opacity: 0, y: 30 }}
+          initial={{ opacity: 0, y: 40 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          transition={{ duration: 0.6, delay: i * 0.3 }}
-          whileHover={{ scale: 1.05 }}
-          className="relative bg-gray-800 bg-opacity-70 rounded-2xl p-8 shadow-lg flex flex-col items-center text-center cursor-pointer
-            border border-transparent hover:border-white
-            transition-all duration-300 ease-in-out overflow-hidden"
+          transition={{ duration: 0.6, delay: i * 0.2 }}
+          whileHover={{ scale: 1.05, rotate: 1 }}
+          className="relative group bg-[#0f172a]/80 backdrop-blur-md cursor-pointer rounded-3xl p-8 shadow-[0_0_20px_rgba(255,255,255,0.1)] text-white flex flex-col items-center text-center transition-all duration-300 border border-gray-700 hover:border-cyan-400"
         >
-          {/* Glow ring */}
-          <span
-            className="absolute inset-0 rounded-2xl pointer-events-none
-              border-2 border-white opacity-0 hover:opacity-100
-              transition-opacity duration-500 animate-glow"
-            style={{ boxShadow: "0 0 15px 5px rgba(255,255,255,0.5)" }}
-          />
+          {/* Glowing border on hover */}
+          <div className="absolute inset-0 rounded-3xl border-2 border-cyan-400 opacity-0 group-hover:opacity-100 transition-opacity duration-500 animate-glow pointer-events-none" />
 
-          <div className="mb-6 z-10">{icon}</div>
-          <h3 className="text-xl font-semibold text-white mb-3 z-10">{title}</h3>
-          <p className="text-gray-300 z-10">{description}</p>
+          {/* Icon */}
+          <div className="text-4xl mb-5 z-10">{icon}</div>
+
+          {/* Title */}
+          <h3 className="text-2xl font-semibold mb-2 z-10">{title}</h3>
+
+          {/* Description */}
+          <p className="text-gray-300 z-10 text-sm">{description}</p>
         </motion.div>
       ))}
     </div>
   </div>
 </section>
+
 <h2 className="text-4xl md:text-5xl text-center font-bold text-white z-50 drop-shadow-lg">
        
           About Our Voting System
@@ -421,9 +399,10 @@ const features = [
 {/* features*/}
 
 {/*team members*/}
-<section className=" text-white py-16 px-4 min-h-screen">
+<section className="text-white py-16 px-4 items-center place-items-center justify-center min-h-screen ">
       <h2 className="text-4xl font-bold text-center mb-12">Meet Our Team</h2>
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-8 justify-items-center">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-10 place-items-center">
+
         {teamMembers.map((member, i) => (
           <motion.div
             key={i}
@@ -432,58 +411,154 @@ const features = [
             whileInView="visible"
             viewport={{ once: true }}
             variants={cardVariants}
-            className="bg-[#1e293b] rounded-2xl overflow-hidden shadow-lg hover:scale-105 hover:rotate-1 transform transition-all duration-300 w-72"
+            className="bg-[#1e293b] border items-center  justify-center  border-gray-700 rounded-2xl shadow-2xl hover:scale-105 transform transition-all duration-500 w-72 text-center p-6"
           >
-            <img
-              src={member.img}
-              alt={member.name}
-              className="w-full h-60 object-cover"
-            />
-            <div className="p-5 text-center">
-              <h3 className="text-xl font-semibold">{member.name}</h3>
-              <p className="text-sm text-gray-400">{member.role}</p>
+            {/* Circular Image with Overlay */}
+            <div className="relative w-28 h-28 mx-auto rounded-full overflow-hidden group mb-4">
+              <img
+                src={member.img}
+                alt={member.name}
+                className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition duration-300"
+              />
+              {/* Black Hover Overlay */}
+              
+            </div>
+
+            {/* Card Text */}
+            <h3 className="text-2xl font-semibold">{member.name}</h3>
+            <p className="text-sm text-gray-400">{member.role}</p>
+
+            {/* Social Links */}
+            <div className="flex justify-center gap-4 mt-3 text-xl text-gray-300">
+              <a href={member.linkedin} className="hover:text-blue-500"><FaLinkedin /></a>
+              <a href={member.github} className="hover:text-white"><FaGithub /></a>
+              <a href={member.twitter} className="hover:text-blue-400"><FaTwitter /></a>
             </div>
           </motion.div>
         ))}
       </div>
     </section>
     {/*faqs*/}
-    <section className="min-h-screen text-white py-16 px-4">
-      <h2 className="text-4xl font-bold text-center mb-12">Frequently Asked Questions</h2>
-      <div className="max-w-3xl mx-auto space-y-4">
-        {faqs.map((faq, i) => (
-          <div
-            key={i}
-            className="bg-[#1e293b] rounded-xl shadow-lg overflow-hidden"
-          >
-            <button
-              onClick={() => toggleFAQ(i)}
-              className="w-full flex justify-between items-center text-left px-6 py-4 text-lg font-medium hover:bg-[#334155] transition"
+   <section className="min-h-screen text-white py-20 px-6  relative overflow-hidden">
+  {/* Blur Glow Background */}
+  <div className="absolute inset-0 z-0">
+    <div className="absolute top-40 -left-10 w-72 h-72 bg-purple-500 opacity-30 blur-3xl rounded-full animate-pulse" />
+    <div className="absolute top-70  right-0 w-72 h-72 bg-cyan-400 opacity-30 blur-3xl rounded-full animate-pulse" />
+  </div>
+
+  <h2 className="text-4xl font-extrabold text-center mb-16 z-10 relative"> Frequently Asked Questions</h2>
+
+  <div className="max-w-4xl mx-auto space-y-6 z-10 relative">
+    {faqs.map((faq, i) => (
+      <motion.div
+        key={i}
+        initial={{ opacity: 0, y: 30 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true }}
+        transition={{ duration: 0.5, delay: i * 0.15 }}
+        className="bg-[#0f172a]/80 backdrop-blur-lg rounded-2xl shadow-lg overflow-hidden border border-white/10 hover:border-white/30 transition-all duration-300"
+      >
+        <button
+          onClick={() => toggleFAQ(i)}
+          className="w-full flex justify-between items-center text-left px-6 py-5 text-lg font-semibold hover:bg-[#1e293b]/70 transition"
+        >
+          <span>{faq.question}</span>
+          <ChevronDown
+            className={`transition-transform duration-300 ${
+              openIndex === i ? "rotate-180 text-cyan-400" : "text-white"
+            }`}
+          />
+        </button>
+        <AnimatePresence initial={false}>
+          {openIndex === i && (
+            <motion.div
+              key="content"
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: "auto", opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              className="px-6 pb-5 text-gray-300"
             >
-              {faq.question}
-              <ChevronDown
-                className={`transform transition-transform ${
-                  openIndex === i ? "rotate-180" : ""
-                }`}
-              />
-            </button>
-            <AnimatePresence initial={false}>
-              {openIndex === i && (
-                <motion.div
-                  key="content"
-                  initial={{ height: 0, opacity: 0 }}
-                  animate={{ height: "auto", opacity: 1 }}
-                  exit={{ height: 0, opacity: 0 }}
-                  className="px-6 pb-4 text-gray-300"
-                >
-                  <p>{faq.answer}</p>
-                </motion.div>
-              )}
-            </AnimatePresence>
+              <p className="leading-relaxed">{faq.answer}</p>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </motion.div>
+    ))}
+  </div>
+</section>
+
+  <footer className="relative   text-gray-300 py-16 px-6 overflow-hidden z-10">
+      {/* Glowing background circle */}
+      <div className="absolute w-80 h-80 bg-cyan-400 rounded-full opacity-20 blur-3xl bottom-0 top-30 left-0 -z-10"></div>
+
+      <div className="max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-10 text-center md:text-left">
+        {/* Brand */}
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+        >
+          <h2 className="text-3xl font-bold text-white mb-3">VoteX</h2>
+          <p className="text-sm leading-relaxed">
+            Revolutionizing elections with blockchain. Vote with trust,
+            transparency, and technology.
+          </p>
+        </motion.div>
+
+        {/* Links */}
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.1 }}
+        >
+          <h3 className="text-lg font-semibold text-white mb-4">Explore</h3>
+          <ul className="space-y-2 text-sm">
+            <li><a href="/" className="hover:text-cyan-400">Home</a></li>
+            <li><a href="/about" className="hover:text-cyan-400">About</a></li>
+            <li><a href="/features" className="hover:text-cyan-400">Features</a></li>
+            <li><a href="/elections" className="hover:text-cyan-400">Elections</a></li>
+            <li><a href="/contact" className="hover:text-cyan-400">Contact</a></li>
+          </ul>
+        </motion.div>
+
+        {/* Contact */}
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.2 }}
+        >
+          <h3 className="text-lg font-semibold text-white mb-4">Contact Us</h3>
+          <ul className="space-y-2 text-sm">
+            <li className="flex items-center justify-center md:justify-start gap-2">
+              <FaEnvelope className="text-cyan-400" /> votex.org
+            </li>
+            <li className="flex items-center justify-center md:justify-start gap-2">
+              <FaEnvelope className="text-cyan-400" /> votex@gmail.com
+            </li>
+          </ul>
+        </motion.div>
+
+        {/* Social */}
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.3 }}
+        >
+          <h3 className="text-lg font-semibold text-white mb-4">Follow Us</h3>
+          <div className="flex justify-center md:justify-start space-x-4 text-xl">
+            <a href="#" className="hover:text-cyan-400 transition"><FaTwitter /></a>
+            <a href="#" className="hover:text-cyan-400 transition"><FaGithub /></a>
+            <a href="#" className="hover:text-cyan-400 transition"><FaDiscord /></a>
           </div>
-        ))}
+        </motion.div>
       </div>
-    </section>
+
+      {/* Divider */}
+      <div className="mt-12 border-t border-gray-700 pt-6 text-center text-sm text-gray-400">
+        © {new Date().getFullYear()} <span className="text-white font-semibold">VoteX</span>. All rights reserved.
+      </div>
+    </footer>
+
 
     </div>
   );
