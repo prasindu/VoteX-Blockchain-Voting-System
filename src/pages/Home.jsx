@@ -62,7 +62,7 @@ const faqs = [
   {
     name: "Suresh Bhanuka",
     role: "Blockchain Developer",
-    img: "/s.JPG",
+    img: "/download.jpeg",
     linkedin: "#",
     github: "#",
     twitter: "#",
@@ -70,7 +70,7 @@ const faqs = [
   {
     name: "Prasindu Deshan",
     role: "Full Stack Developer",
-    img: "/p.JPG",
+    img: "/p.jpg",
     linkedin: "#",
     github: "#",
     twitter: "#",
@@ -78,7 +78,7 @@ const faqs = [
   {
     name: "Dinushka Malshan",
     role: "Full Stack Developer",
-    img: "/d.JPG",
+    img: "/d.jpg",
     linkedin: "#",
     github: "#",
     twitter: "#",
@@ -86,7 +86,7 @@ const faqs = [
   {
     name: "Damindu Prasadith",
     role: "Frontend Engineer",
-    img: "/d2.JPG",
+    img: "/d2.jpg",
     linkedin: "#",
     github: "#",
     twitter: "#",
@@ -94,7 +94,7 @@ const faqs = [
    {
     name: "Chamoda Deshan",
     role: "Deployment Engineer",
-    img: "/ch.JPG",
+    img: "/ch.jpg",
     linkedin: "#",
     github: "#",
     twitter: "#",
@@ -102,7 +102,7 @@ const faqs = [
    {
     name: "Sandun Amantha",
     role: "UI/UX Designer",
-    img: "/a.JPEG",
+    img: "/a.jpeg",
     linkedin: "#",
     github: "#",
     twitter: "#",
@@ -110,7 +110,7 @@ const faqs = [
    {
     name: "Thamara Bhagya",
     role: "Security & Penetration Tester",
-    img: "/t.JPEG",
+    img: "/t.jpeg`",
     linkedin: "#",
     github: "#",
     twitter: "#",
