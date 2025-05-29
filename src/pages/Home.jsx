@@ -70,7 +70,7 @@ const faqs = [
   {
     name: "Prasindu Deshan",
     role: "Blockchain Developer",
-    img: "/public/p.JPG",
+    img: "/p.JPG",
     linkedin: "#",
     github: "#",
     twitter: "#",
@@ -78,7 +78,7 @@ const faqs = [
   {
     name: "Dinushka Malshan",
     role: "Full Stack Developer",
-    img: "/public/d.JPG",
+    img: "./public/d.JPG",
     linkedin: "#",
     github: "#",
     twitter: "#",
@@ -86,7 +86,7 @@ const faqs = [
   {
     name: "Damindu Prasadith",
     role: "Frontend Engineer",
-    img: "/public/d2.JPG",
+    img: "../public/d2.JPG",
     linkedin: "#",
     github: "#",
     twitter: "#",
