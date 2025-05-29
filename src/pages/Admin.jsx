@@ -141,7 +141,7 @@ function Admin() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-800 p-6">
+    <div className="min-h-screen bg-gradient-to-br from-black via-zinc-800 to-black p-6">
          <div className="fixed inset-0 overflow-hidden pointer-events-none">
               {[...Array(50)].map((_, i) => (
                 <motion.div

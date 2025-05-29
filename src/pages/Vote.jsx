@@ -267,7 +267,7 @@ function Vote() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-900 text-white">
+    <div className="min-h-screen bg-gradient-to-br from-black via-neutral-800 to-black text-white">
       {/* Subtle animated background */}
      <div className="fixed inset-0 overflow-hidden pointer-events-none">
         {[...Array(50)].map((_, i) => (
@@ -291,12 +291,12 @@ function Vote() {
         ))
        
         }
-        <div className="absolute -top-40 -right-40 w-80 h-80 bg-purple-500 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse"></div>
-        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-purple-600 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse"></div>
-        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-80 h-80 bg-indigo-500 rounded-full mix-blend-multiply filter blur-xl opacity-10 animate-pulse"></div>
+        <div className="absolute -top-40 -right-40 w-80 h-80 bg-zinc-400 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse"></div>
+        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-zinc-500 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse"></div>
+        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-80 h-80 bg-zinc-400 rounded-full mix-blend-multiply filter blur-xl opacity-10 animate-pulse"></div>
       </div>
 
-      <div className="relative max-w-7xl mx-auto px-4 py-8">
+      <div className="relative max-w-7xl mx-auto px-4 py-8 pt-13">
         <AnimatePresence mode="wait">
           {!showElectionView ? (
             // Elections List View

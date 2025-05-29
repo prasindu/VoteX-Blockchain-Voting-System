@@ -1,27 +1,12 @@
-/* Home.css - Additional Styles */
-@keyframes float {
-  0% {
-    transform: translateY(0) translateX(0);
-    opacity: 0;
+@keyframes glow {
+  0%, 100% {
+    box-shadow: 0 0 15px 5px rgba(255,255,255,0.5);
   }
   50% {
-    opacity: 0.5;
-  }
-  100% {
-    transform: translateY(-100vh) translateX(20px);
-    opacity: 0;
+    box-shadow: 0 0 25px 10px rgba(255,255,255,0.8);
   }
 }
 
-.animate-snake {
-  animation: snake 15s linear infinite;
-}
-
-@keyframes snake {
-  0% {
-    stroke-dashoffset: 1000;
-  }
-  100% {
-    stroke-dashoffset: 0;
-  }
+.animate-glow {
+  animation: glow 2.5s ease-in-out infinite;
 }
