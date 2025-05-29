@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Canvas } from '@react-three/fiber';
 import { ScrambleText } from './ScrambleText';
+import ScrambleText2 from "./ScrambleText2";
 import { loadFull } from 'tsparticles';
 import './Home.css';
 import Scene from './scene';
@@ -18,6 +19,11 @@ function Home() {
   const [sparks, setSparks] = useState([]);
   const [titleIndex, setTitleIndex] = useState(0);
   const [subtitleIndex, setSubtitleIndex] = useState(0);
+  const paths = [
+  "M10,10 L300,10 L300,150 L50,150 L50,250 L400,250",
+  "M100,20 L100,200 L300,200 L300,50",
+  "M50,250 L400,250 L400,50 L200,50",
+];
 const faqs = [
   {
     question: "What is this voting system built on?",
@@ -37,7 +43,7 @@ const faqs = [
   },
   {
     question: "Can anyone create an election?",
-    answer: "Only authorized admins can create and manage elections through the admin panel.",
+    answer: "Only authorized Elections can create and manage elections through the Election panel.",
   },
 ];
   const teamMembers = [
@@ -145,7 +151,7 @@ const features = [
 ];
 
   const buttonColors =  {
-  Admin: {
+  Election: {
     base: "bg-transparent border border-blue-500",
     hover: "hover:shadow-[0_0_20px_#3b82f6] hover:text-blue-400",
   },
@@ -280,7 +286,7 @@ const features = [
     transition={{ delay: 0.2, duration: 0.6 }}
     className="grid grid-cols-1 md:grid-cols-3 gap-6 z-20 mb-10"
   >
-    {["Admin", "Vote", "Results"].map((label, i) => (
+    {["Election", "Vote", "Results"].map((label, i) => (
       <Link to={`/${label.toLowerCase()}`} key={i}>
         <motion.div
           whileHover={{ scale: 1.05 }}
@@ -293,45 +299,40 @@ const features = [
     ))}
   </motion.div>
 </div>
-{/* About */}
-    <section
-      className="relative min-h-screen overflow-hidden bg-gradient-to-b from-gray-900 via-black to-gray-900 py-20"
-      style={{
-        backgroundAttachment: "fixed", // Parallax effect
-        backgroundImage: "url('/your-background-image.jpg')",
-        backgroundSize: "cover",
-        backgroundPosition: "center",
-      }}
-    >
-      {/* Dark overlay */}
-     
-
-      {/* Content */}
-      <motion.div
-        initial={{ opacity: 0, y: 40 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.8 }}
-        viewport={{ once: true }}
-        className="relative z-10 max-w-5xl mx-auto px-6 text-center"
-      >
-        <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">
-          About Our Voting System
-        </h2>
-        <p className="text-gray-300 text-lg leading-relaxed">
-          Our blockchain-based voting platform ensures transparency, security,
-          and real-time verifiability. Powered by smart contracts and
-          decentralized storage, it enables every citizen to vote safely and
-          confidently.
-        </p>
-      </motion.div>
-    </section>
-{/* features*/}
 <section
   className="relative py-20 min-h-screen"
   style={{ backgroundAttachment: "fixed", backgroundImage: "url('/your-background.jpg')", backgroundSize: 'cover', backgroundPosition: 'center' }} // Parallax background image
 >
   {/* Dark overlay */}
-  <div className="absolute inset-0  bg-opacity-60 -z-10" />
+  
+ <div className="absolute inset-0 overflow-hidden pointer-events-none -z-10">
+      {paths.map((d, i) => (
+        <svg
+          key={i}
+          width="100%"
+          height="100%"
+          viewBox="0 0 1024 300"
+          preserveAspectRatio="none"
+          className="absolute top-0 left-0"
+        >
+          <path d={d} className="trail-path" />
+        </svg>
+      ))}
+
+      {/* Neon dots with random animation */}
+      {paths.map((d, i) => (
+        <div
+          key={`dot-${i}`}
+          className="neon-dot"
+          style={{
+            offsetPath: `path("${d}")`,
+            animation: `moveDot${(i % 2) + 1} ${8 + i * 2}s linear infinite`,
+          }}
+        />
+      ))}
+    </div>
+
+{/* ------------------------ */}
 
   <div className="max-w-7xl mx-auto px-6 text-center">
     <motion.h2
@@ -373,6 +374,52 @@ const features = [
     </div>
   </div>
 </section>
+<h2 className="text-4xl md:text-5xl text-center font-bold text-white z-50 drop-shadow-lg">
+       
+          About Our Voting System
+       
+      </h2>
+{/* About */}
+   <section
+  className="relative min-h-screen overflow-hidden py-20 flex items-center justify-center"
+  style={{
+    backgroundAttachment: "fixed",
+    backgroundImage: "url('/your-background-image.jpg')",
+    backgroundSize: "cover",
+    backgroundPosition: "center",
+  }}
+>
+  {/* Overlay */}
+ 
+
+  {/* Content Container */}
+  <div className="relative z-10 max-w-7xl w-full px-6 flex flex-col lg:flex-row items-center justify-between gap-12">
+    
+    {/* 3D Scene (left on desktop) */}
+    <div className="w-full lg:w-1/2 h-[400px] z-0 lg:h-[500px]">
+      <Scene />
+    </div>
+
+    {/* Text content (right on desktop) */}
+    <motion.div id='about'
+  initial={{ opacity: 0, y: 40 }}
+  whileInView={{ opacity: 1, y: 0 }}
+  transition={{ duration: 0.8 }}
+  viewport={{ once: true }}
+  className="text-center lg:text-left z-10 max-w-xl"
+>
+  <ScrambleText2
+    text="Our blockchain-based voting platform ensures transparency, security, and real-time verification through immutable ledger technology. Leveraging smart contracts, votes are automatically validated without human intervention, minimizing the risk of tampering or fraud. All data is stored in a decentralized manner, ensuring resilience against single points of failure.
+     The platform supports both public and private elections, offering customizable access control. Designed for scalability and accessibility, it empowers every citizen to cast their vote safely, anonymously, and with full confidence in the integrity of the process."
+    className=" font-hacker  text-blue-800"
+  />
+</motion.div>
+
+  </div>
+</section>
+
+{/* features*/}
+
 {/*team members*/}
 <section className=" text-white py-16 px-4 min-h-screen">
       <h2 className="text-4xl font-bold text-center mb-12">Meet Our Team</h2>
