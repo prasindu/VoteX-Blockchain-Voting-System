@@ -442,8 +442,8 @@ const features = [
    <section className="min-h-screen text-white py-20 px-6  relative overflow-hidden">
   {/* Blur Glow Background */}
   <div className="absolute inset-0 z-0">
-    <div className="absolute top-40 -left-10 w-72 h-72 bg-purple-500 opacity-30 blur-3xl rounded-full animate-pulse" />
-    <div className="absolute top-70  right-0 w-72 h-72 bg-cyan-400 opacity-30 blur-3xl rounded-full animate-pulse" />
+   
+    <div className="absolute top-70  right-0 w-72 h-72 bg-gray-400 opacity-30 blur-3xl rounded-full animate-pulse" />
   </div>
 
   <h2 className="text-4xl font-extrabold text-center mb-16 z-10 relative"> Frequently Asked Questions</h2>
