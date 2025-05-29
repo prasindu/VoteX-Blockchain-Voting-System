@@ -45,7 +45,7 @@ const Navbar = () => {
                 <div className="absolute -inset-2 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full opacity-0 group-hover:opacity-20 blur-md transition-all duration-300"></div>
               </div>
               <span className="text-2xl font-black bg-gradient-to-r from-white to-yellow-200 bg-clip-text text-transparent tracking-wider">
-                MyApp
+                VoteX
               </span>
             </div>
 
