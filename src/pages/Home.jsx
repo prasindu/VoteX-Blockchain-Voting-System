@@ -62,7 +62,7 @@ const faqs = [
   {
     name: "Suresh Bhanuka",
     role: "Blockchain Developer",
-    img: "/download.jpeg",
+    img: "/s.JPG",
     linkedin: "#",
     github: "#",
     twitter: "#",
