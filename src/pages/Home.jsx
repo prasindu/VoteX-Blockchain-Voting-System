@@ -62,30 +62,49 @@ const faqs = [
   {
     name: "Suresh Bhanuka",
     role: "Blockchain Developer",
+
+    img: "/public/s.JPG",
+    linkedin: "https://www.linkedin.com/in/suresh-bhanuka/",
+    github: "https://github.com/sureshbhanuka",
+    twitter: "https://x.com/suresh_bhanuka",
+
     img: "/s.JPG",
     linkedin: "#",
     github: "#",
     twitter: "#",
+
   },
   {
     name: "Prasindu Deshan",
     role: "Full Stack Developer",
     img: "/p.jpg",
     linkedin: "#",
-    github: "#",
+    github: "https://github.com/prasindu",
     twitter: "#",
   },
   {
     name: "Dinushka Malshan",
     role: "Full Stack Developer",
+
+    img: "./public/d.JPG",
+    linkedin: "https://linkedin.com/in/dinushka-malshan-3b8521292",
+    github: "https://github.com/dinushkam",
+    twitter: "https://x.com/DDMalshan",
+
     img: "/d.jpg",
     linkedin: "#",
     github: "#",
     twitter: "#",
+
   },
   {
     name: "Damindu Prasadith",
     role: "Frontend Engineer",
+
+    img: "../public/d2.JPG",
+    linkedin: "https://www.linkedin.com/in/damindu-prasadith-8193b1282",
+    github: "https://github.com/Damiya2001",
+    twitter: "https://x.com/Damiya2001",
     img: "/d2.jpg",
     linkedin: "#",
     github: "#",
@@ -102,6 +121,10 @@ const faqs = [
    {
     name: "Sandun Amantha",
     role: "UI/UX Designer",
+
+    img: "/public/a.JPEG",
+    linkedin: "https://www.linkedin.com/in/sandun-amantha-047644355/",
+    github: "https://github.com/Sandun-Amantha",
     img: "/a.jpeg",
     linkedin: "#",
     github: "#",
@@ -110,6 +133,11 @@ const faqs = [
    {
     name: "Thamara Bhagya",
     role: "Security & Penetration Tester",
+
+    img: "/public/t.JPEG",
+    linkedin: "http://www.linkedin.com/in/thamarabhagya107",
+    github: "https://github.com/ThamaraBhagya",
+    twitter: "https://x.com/bhagyathamara?s=21",
     img: "/t.jpeg",
     linkedin: "#",
     github: "#",
@@ -430,9 +458,9 @@ const features = [
 
             {/* Social Links */}
             <div className="flex justify-center gap-4 mt-3 text-xl text-gray-300">
-              <a href={member.linkedin} className="hover:text-blue-500"><FaLinkedin /></a>
-              <a href={member.github} className="hover:text-white"><FaGithub /></a>
-              <a href={member.twitter} className="hover:text-blue-400"><FaTwitter /></a>
+              <a href={member.linkedin} className="hover:text-blue-500" target="_blank" rel="noopener noreferrer"><FaLinkedin /></a>
+              <a href={member.github} className="hover:text-white" target="_blank" rel="noopener noreferrer"><FaGithub /></a>
+              <a href={member.twitter} className="hover:text-blue-400" target="_blank" rel="noopener noreferrer"><FaTwitter /></a>
             </div>
           </motion.div>
         ))}
