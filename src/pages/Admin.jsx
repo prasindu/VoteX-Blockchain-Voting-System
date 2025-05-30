@@ -174,7 +174,7 @@ function Admin() {
           className="bg-white/10 backdrop-blur-xl rounded-3xl shadow-2xl border border-white/20 overflow-hidden"
         >
           {/* Header */}
-          <div className="bg-gradient-to-r from-blue-600 to-purple-600 p-8">
+          <div className="bg-gradient-to-r from-gray-400 to-gray-900 p-8">
             <div className="flex items-center justify-between">
               <div className="text-center flex-1">
                 <Vote className="w-16 h-16 mx-auto mb-4 text-white" />
@@ -184,7 +184,7 @@ function Admin() {
               
               {/* Wallet Status */}
               {isConnected && (
-                <div className="flex items-center space-x-4 bg-white/10 rounded-xl p-4">
+                <div className="flex items-center space-x-4 bg-gradient-to-r from-gray-400 to-gray-900 rounded-xl p-4">
                   <div className="text-right">
                     <p className="text-white text-sm">Connected Wallet</p>
                     <p className="text-blue-200 font-mono text-sm">{formatAddress(walletAddress)}</p>
@@ -209,7 +209,7 @@ function Admin() {
                 className={`w-full py-4 text-white rounded-xl mb-6 font-semibold text-lg transition-all duration-300 shadow-lg flex items-center justify-center ${
                   isLoading 
                     ? 'bg-gray-600 cursor-not-allowed' 
-                    : 'bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700'
+                    : 'bg-gradient-to-r from-gray-900 to-gray-400 hover:from-slate-500 hover:to-slate-950'
                 }`}
                 whileHover={!isLoading ? { scale: 1.02 } : {}}
                 whileTap={!isLoading ? { scale: 0.98 } : {}}
@@ -379,7 +379,7 @@ function Admin() {
                     </h3>
                     <button
                       onClick={addCandidate}
-                      className="px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg transition-colors duration-300 text-sm font-medium"
+                      className="px-4 py-2 bg-gradient-to-r from-gray-900 to-gray-600 hover:from-slate-600 hover:to-slate-900 text-white rounded-lg transition-colors duration-300 text-sm font-medium"
                     >
                       + Add Candidate
                     </button>
@@ -464,7 +464,7 @@ function Admin() {
                   className={`w-full py-4 font-bold text-white rounded-xl text-lg transition-all duration-300 ${
                     isLoading || Object.values(uploadProgress).some(Boolean)
                       ? 'bg-gray-600 cursor-not-allowed'
-                      : 'bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 shadow-lg hover:shadow-xl'
+                      : 'bg-gradient-to-r from-gray-500 to-gray-900 hover:from-slate-400 hover:to-slate-900 shadow-lg hover:shadow-xl'
                   }`}
                   whileHover={!isLoading && !Object.values(uploadProgress).some(Boolean) ? { scale: 1.02 } : {}}
                   whileTap={!isLoading && !Object.values(uploadProgress).some(Boolean) ? { scale: 0.98 } : {}}
