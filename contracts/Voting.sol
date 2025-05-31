@@ -23,6 +23,8 @@ contract Voting {
         mapping(address => bool) hasVoted;
         mapping(address => uint) voterChoice;
         bool ended;
+        uint totalEligibleVoters; // New field to track eligible voters
+        address[] actualVoters; // New field to track who actually voted
     }
     
     mapping(uint => Election) public elections;
@@ -78,6 +80,7 @@ contract Voting {
         e.isPublic = _isPublic;
         e.creator = msg.sender;
         e.allowedVoters = _allowedVoters;
+        e.totalEligibleVoters = _isPublic ? 0 : _allowedVoters.length; // 0 for public = unlimited
         
         for (uint i = 0; i < _candidateNames.length; i++) {
             e.candidates.push(Candidate({
@@ -110,6 +113,7 @@ contract Voting {
         e.hasVoted[msg.sender] = true;
         e.voterChoice[msg.sender] = _candidateIndex;
         e.candidates[_candidateIndex].voteCount++;
+        e.actualVoters.push(msg.sender); // Track who voted
         
         emit VoteCasted(_electionId, msg.sender, _candidateIndex);
     }
@@ -148,6 +152,55 @@ contract Voting {
         }
     }
     
+    // New function to get voter participation data
+    function getVoterParticipation(uint _electionId) 
+        public 
+        view 
+        onlyAuthorizedViewer(_electionId)
+        returns (
+            uint totalEligibleVoters,
+            uint votesCast,
+            address[] memory allowedVoters,
+            address[] memory actualVoters,
+            bool isPublic
+        ) 
+    {
+        Election storage e = elections[_electionId];
+        return (
+            e.totalEligibleVoters,
+            e.actualVoters.length,
+            e.allowedVoters,
+            e.actualVoters,
+            e.isPublic
+        );
+    }
+    
+    // New function to get detailed voter status
+    function getVoterStatus(uint _electionId, address[] memory voterAddresses) 
+        public 
+        view 
+        onlyAuthorizedViewer(_electionId)
+        returns (
+            bool[] memory hasVotedStatus,
+            uint[] memory voteChoices,
+            bool[] memory isEligible
+        ) 
+    {
+        Election storage e = elections[_electionId];
+        uint length = voterAddresses.length;
+        
+        hasVotedStatus = new bool[](length);
+        voteChoices = new uint[](length);
+        isEligible = new bool[](length);
+        
+        for (uint i = 0; i < length; i++) {
+            address voter = voterAddresses[i];
+            hasVotedStatus[i] = e.hasVoted[voter];
+            voteChoices[i] = e.hasVoted[voter] ? e.voterChoice[voter] : 0;
+            isEligible[i] = e.isPublic || isAllowedVoter[_electionId][voter];
+        }
+    }
+    
     function getElectionInfo(uint _electionId) 
         public 
         view 
@@ -165,7 +218,7 @@ contract Voting {
         Election storage e = elections[_electionId];
         return (
             e.name,
-            e.electionIpfsHash, // ✅ Fixed: previously was imageHash
+            e.electionIpfsHash,
             e.startTime,
             e.endTime,
             e.isPublic,
@@ -191,7 +244,7 @@ contract Voting {
         
         for (uint i = 0; i < candidateCount; i++) {
             names[i] = e.candidates[i].name;
-            imageHashes[i] = e.candidates[i].ipfsHash; // ✅ Fixed: was imageHash
+            imageHashes[i] = e.candidates[i].ipfsHash;
         }
     }
     

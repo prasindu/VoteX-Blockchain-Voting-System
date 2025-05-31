@@ -1,1 +1,78 @@
 @import "tailwindcss";
+
+@tailwind utilities;
+
+@layer utilities {
+  .animate-fade-in {
+    animation: fadeIn 1.2s ease-out both;
+  }
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+}
+
+body{
+  background-color: #0b0b0b;
+}
+#about{
+  font-family: 'Share Tech Mono';
+}
+/* src/styles/neon.css */
+
+/* src/styles/neon.css */
+@keyframes fadeTrail {
+  0% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes moveDot1 {
+  0% {
+    offset-distance: 0%;
+  }
+  100% {
+    offset-distance: 100%;
+  }
+}
+
+@keyframes moveDot2 {
+  0% {
+    offset-distance: 100%;
+  }
+  100% {
+    offset-distance: 0%;
+  }
+}
+
+.neon-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 9999px;
+  background-color: #00f7ff;
+  position: absolute;
+  offset-rotate: 0deg;
+  box-shadow: 0 0 5px #00f7ff, 0 0 10px #00f7ff;
+}
+
+.trail-path {
+  stroke: #00f7ff;
+  stroke-opacity: 0.1;
+  stroke-width: 2;
+  fill: none;
+  stroke-dasharray: 5, 5;
+  animation: fadeTrail 3s linear infinite;
+}
+
+
+

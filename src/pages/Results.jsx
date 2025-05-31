@@ -7,6 +7,7 @@ import { Download, FileText, BarChart3, PieChart as PieChartIcon, Users, Trophy,
 import { getIPFSURL } from '../ipfs';
 import * as XLSX from 'xlsx';
 
+
 function Results() {
   const {
     contract,
@@ -24,6 +25,21 @@ function Results() {
   const [showElectionView, setShowElectionView] = useState(false);
   const [chartType, setChartType] = useState('bar');
   const [searchTerm, setSearchTerm] = useState('');
+  const [chatOpen, setChatOpen] = useState(false);
+  const [chatMessages, setChatMessages] = useState([]);
+  const [chatInput, setChatInput] = useState('');
+  const [electionSummary, setElectionSummary] = useState('');
+  const [isBotTyping, setIsBotTyping] = useState(false);
+  const [isMinimized, setIsMinimized] = useState(false);
+
+  const [totalVoters, setTotalVoters] = useState(0);
+  const [votesCast, setVotesCast] = useState(0);
+  const [voters, setVoters] = useState([]); // Initialize as empty array
+
+
+
+
+
 
   // Enhanced color palette with gradients
   const COLORS = [
@@ -97,6 +113,8 @@ function Results() {
     }
   };
 
+
+
   const fetchElections = async () => {
     if (!contract) return;
     setLoading(true);
@@ -159,64 +177,85 @@ function Results() {
     }
   };
 
-  const fetchElectionResults = async (election) => {
-    if (!contract || !election) return;
+   const fetchElectionResults = async (election) => {
+  if (!contract || !election) return;
 
-    setLoading(true);
-    setMessage('');
+  setLoading(true);
+  setMessage('');
+  
+  try {
+    // ... existing access checks ...
+
+    const resultsData = await contract.getElectionResults(election.id);
+    const totalVotes = await contract.getTotalVotes(election.id);
     
-    try {
-      // Double-check access before fetching results
-      const hasAccess = await checkUserAccess(election.id, election);
+    // Get voter participation data
+    const participation = await contract.getVoterParticipation(election.id);
+    
+    // Get detailed voter status if private election
+    let voterDetails = [];
+    if (participation.isPublic) {
+      // For public elections, we can only show who actually voted
+      voterDetails = participation.actualVoters.map(address => ({
+        address,
+        hasVoted: true,
+        isEligible: true
+      }));
+    } else {
+      // For private elections, show all allowed voters and their status
+      const voterStatus = await contract.getVoterStatus(
+        election.id, 
+        participation.allowedVoters
+      );
       
-      if (!hasAccess) {
-        throw new Error('You do not have permission to view these results');
-      }
-      
-      // Check if results are available
-      const currentTime = Math.floor(Date.now() / 1000);
-      const canViewResults = currentTime > election.endTime || election.ended;
-      
-      if (!canViewResults) {
-        throw new Error('Results are not yet available. Please wait until the election ends.');
-      }
-      
-      const resultsData = await contract.getElectionResults(election.id);
-      const totalVotes = await contract.getTotalVotes(election.id);
-      
-      const processedResults = {
-        electionInfo: election,
-        candidates: resultsData[0].map((name, index) => ({
-          name,
-          imageHash: resultsData[1][index],
-          voteCount: Number(resultsData[2][index]),
-          percentage: Number(totalVotes) > 0 ? ((Number(resultsData[2][index]) / Number(totalVotes)) * 100).toFixed(1) : 0,
-          index
-        })),
-        totalVotes: Number(totalVotes),
-        timestamp: new Date().toISOString()
-      };
-
-      // Sort candidates by vote count (descending)
-      processedResults.candidates.sort((a, b) => b.voteCount - a.voteCount);
-      
-      setResults(processedResults);
-      
-    } catch (err) {
-      console.error('Error fetching results:', err);
-      const errorMessage = err.reason || err.message || 'Unknown error occurred';
-      
-      if (errorMessage.includes('Results not available yet')) {
-        setMessage('⏰ Results are not yet available. Please wait until the election ends.');
-      } else if (errorMessage.includes('Not authorized') || errorMessage.includes('permission')) {
-        setMessage('🔒 You do not have permission to view these results. You may need to vote in this election first.');
-      } else {
-        setMessage(`❌ Error fetching results: ${errorMessage}`);
-      }
-    } finally {
-      setLoading(false);
+      voterDetails = participation.allowedVoters.map((address, index) => ({
+        address,
+        hasVoted: voterStatus.hasVotedStatus[index],
+        isEligible: voterStatus.isEligible[index]
+      }));
     }
-  };
+
+    const processedResults = {
+      electionInfo: election,
+      candidates: resultsData[0].map((name, index) => ({
+        name,
+        imageHash: resultsData[1][index],
+        voteCount: Number(resultsData[2][index]),
+        percentage: Number(totalVotes) > 0 ? 
+          ((Number(resultsData[2][index]) / Number(totalVotes)) * 100).toFixed(1) : 0,
+        index
+      })),
+      totalVotes: Number(totalVotes),
+      timestamp: new Date().toISOString(),
+      voterParticipation: {
+        totalEligibleVoters: participation.isPublic ? 0 : participation.totalEligibleVoters.toNumber(),
+        votesCast: participation.votesCast.toNumber(),
+        isPublic: participation.isPublic,
+        voterDetails
+      }
+    };
+
+    // Sort candidates by vote count (descending)
+    processedResults.candidates.sort((a, b) => b.voteCount - a.voteCount);
+    
+    setResults(processedResults);
+    
+  } catch (err) {
+    // ... existing error handling ...
+  } finally {
+    setLoading(false);
+  }
+};
+// Helper function to format wallet address
+const formatAddress = (address) => {
+  if (!address) return '';
+  return `${address.substring(0, 6)}...${address.substring(address.length - 4)}`;
+};
+
+// Helper function to check if address is current user
+const isCurrentUser = (address) => {
+  return address && account && address.toLowerCase() === account.toLowerCase();
+};
 
   const handleElectionClick = async (election) => {
     setSelectedElection(election);
@@ -279,6 +318,69 @@ function Results() {
       });
     }
   };
+
+  const handleStartChat = async () => {
+    if (!results) return;
+
+    const summary = results.candidates.map(
+      (c, idx) => `${idx + 1}. ${c.name} - ${c.voteCount} votes (${c.percentage}%)`
+    ).join('\n');
+
+    const introMessage = `Here are the election results:\n\n${summary}`;
+    setElectionSummary(introMessage);
+
+    try {
+      const res = await fetch('https://chatbot-production-255f.up.railway.app/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: introMessage })
+      });
+
+      const data = await res.json();
+      setChatMessages([
+        { sender: 'bot', text: data.reply }
+      ]);
+      setChatOpen(true);
+    } catch (err) {
+      console.error('Chat start error:', err);
+      setChatMessages([{ sender: 'bot', text: '❌ Failed to start chatbot. Please try again later.' }]);
+      setChatOpen(true);
+    }
+  };
+
+  const handleSendChat = async () => {
+    if (!chatInput.trim()) return;
+
+    const userMessage = { sender: 'user', text: chatInput };
+    setChatMessages((prev) => [...prev, userMessage]);
+    setChatInput('');
+    setIsBotTyping(true); // ✅ Show typing animation
+
+    try {
+      const res = await fetch('https://chatbot-production-255f.up.railway.app/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message: `${electionSummary}\n\nUser Question: ${chatInput}`,
+        }),
+      });
+
+      const data = await res.json();
+
+      setChatMessages((prev) => [...prev, { sender: 'bot', text: data.reply }]);
+    } catch (err) {
+      console.error('Chat send error:', err);
+      setChatMessages((prev) => [
+        ...prev,
+        { sender: 'bot', text: '❌ AI failed to respond. Please try again later.' },
+      ]);
+    } finally {
+      setIsBotTyping(false); // ✅ Hide typing animation
+    }
+  };
+
+
+
 
   const filteredElections = elections.filter(election => 
     election.name.toLowerCase().includes(searchTerm.toLowerCase())
@@ -360,13 +462,29 @@ function Results() {
     );
   }
 
+  const playBotSound = () => {
+    const audio = document.getElementById('bot-sound');
+    if (audio) {
+      audio.currentTime = 0;
+      audio.play().catch(e => {
+        // Optional: handle autoplay restrictions on some browsers
+        console.warn("Sound couldn't be played automatically:", e);
+      });
+    }
+  };
+
+
+
+
+
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 text-white ">
+    <div className="min-h-screen bg-gradient-to-br from-black via-neutral-800 to-black text-white ">
       {/* Animated background elements */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-40 -right-40 w-80 h-80 bg-purple-500 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse"></div>
-        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-blue-500 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse"></div>
-        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-80 h-80 bg-indigo-500 rounded-full mix-blend-multiply filter blur-xl opacity-10 animate-pulse"></div>
+        <div className="absolute -top-40 -right-40 w-80 h-80 bg-zinc-400 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse"></div>
+        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-zinc-400 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse"></div>
+        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-80 h-80 bg-zinc-500 rounded-full mix-blend-multiply filter blur-xl opacity-10 animate-pulse"></div>
       </div>
 
       <div className="relative z-10 px-4 py-8">
@@ -862,6 +980,113 @@ function Results() {
                       </div>
                     </motion.div>
 
+                    
+                    {/* Voter Participation Section */}
+                    <motion.div
+                      className="bg-white/10 backdrop-blur-md rounded-2xl p-8 border border-white/20"
+                      initial={{ y: 20, opacity: 0 }}
+                      animate={{ y: 0, opacity: 1 }}
+                      transition={{ delay: 0.4 }}
+                    >
+                      <h3 className="text-2xl font-bold mb-6 text-white text-center">
+                        Voter Participation
+                      </h3>
+                      
+                      {/* Participation Stats */}
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                        <div className="bg-white/5 rounded-xl p-6 text-center border border-white/10">
+                          <div className="text-4xl font-bold text-purple-400 mb-2">
+                            {results.electionInfo.isPublic ? '∞' : results.voterParticipation.totalEligibleVoters}
+                          </div>
+                          <p className="text-sm text-gray-300">Total Eligible Voters</p>
+                        </div>
+                        <div className="bg-white/5 rounded-xl p-6 text-center border border-white/10">
+                          <div className="text-4xl font-bold text-blue-400 mb-2">
+                            {results.voterParticipation.votesCast}
+                          </div>
+                          <p className="text-sm text-gray-300">Votes Cast</p>
+                        </div>
+                        <div className="bg-white/5 rounded-xl p-6 text-center border border-white/10">
+                          <div className="text-4xl font-bold text-green-400 mb-2">
+                            {results.voterParticipation.totalEligibleVoters > 0 
+                              ? `${Math.round((results.voterParticipation.votesCast / results.voterParticipation.totalEligibleVoters) * 100)}%` 
+                              : 'N/A'}
+                          </div>
+                          <p className="text-sm text-gray-300">Participation Rate</p>
+                        </div>
+                      </div>
+
+                      {/* Voter List Table */}
+                      <div className="overflow-x-auto">
+                        <table className="w-full">
+                          <thead>
+                            <tr className="border-b border-white/20">
+                              <th className="text-left py-4 px-6 text-gray-300 font-semibold">#</th>
+                              <th className="text-left py-4 px-6 text-gray-300 font-semibold">Wallet Address</th>
+                              <th className="text-left py-4 px-6 text-gray-300 font-semibold">Status</th>
+                              {!results.electionInfo.isPublic && (
+                                <th className="text-left py-4 px-6 text-gray-300 font-semibold">Eligible</th>
+                              )}
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {results.voterParticipation.voterDetails.map((voter, index) => (
+                              <motion.tr
+                                key={voter.address}
+                                className="border-b border-white/10 hover:bg-white/5 transition-colors"
+                                initial={{ x: -20, opacity: 0 }}
+                                animate={{ x: 0, opacity: 1 }}
+                                transition={{ delay: 0.5 + index * 0.05 }}
+                              >
+                                <td className="py-4 px-6 text-gray-300">{index + 1}</td>
+                                <td className="py-4 px-6">
+                                  <div className="flex items-center">
+                                    <div className="w-8 h-8 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center mr-3">
+                                      <span className="text-xs font-bold">
+                                        {voter.address.substring(2, 4).toUpperCase()}
+                                      </span>
+                                    </div>
+                                    <div>
+                                      <p className="font-medium text-white">
+                                        {`${voter.address.substring(0, 6)}...${voter.address.substring(38)}`}
+                                      </p>
+                                      {voter.address.toLowerCase() === account.toLowerCase() && (
+                                        <span className="text-xs bg-blue-500/20 text-blue-300 px-2 py-0.5 rounded-full">
+                                          You
+                                        </span>
+                                      )}
+                                    </div>
+                                  </div>
+                                </td>
+                                <td className="py-4 px-6">
+                                  <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${
+                                    voter.hasVoted 
+                                      ? 'bg-green-500/20 text-green-400' 
+                                      : 'bg-red-500/20 text-red-400'
+                                  }`}>
+                                    {voter.hasVoted ? 'Voted' : 'Not Voted'}
+                                  </span>
+                                </td>
+                                {!results.electionInfo.isPublic && (
+                                  <td className="py-4 px-6">
+                                    <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${
+                                      voter.isEligible 
+                                        ? 'bg-blue-500/20 text-blue-400' 
+                                        : 'bg-gray-500/20 text-gray-400'
+                                    }`}>
+                                      {voter.isEligible ? 'Eligible' : 'Not Eligible'}
+                                    </span>
+                                  </td>
+                                )}
+                              </motion.tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+
+                      {/* Pagination would go here if needed */}
+                    </motion.div>
+                    
                     {/* Action Buttons */}
                     <motion.div
                       className="flex flex-col sm:flex-row gap-4 justify-center items-center"
@@ -884,6 +1109,14 @@ function Results() {
                         <Share className="w-5 h-5 mr-2" />
                         Share Results
                       </button>
+
+                      <button
+                        onClick={() => handleStartChat()}
+                        className="flex items-center px-8 py-4 bg-gradient-to-r from-blue-900 to-purple-500 hover:from-blue-700 hover:to-purple-700 text-white rounded-xl font-semibold transition-all transform hover:scale-105 shadow-lg"
+                      >
+                        🤖 Chat Bot
+                      </button>
+
                     </motion.div>
 
                     {/* Footer Note */}
@@ -921,6 +1154,233 @@ function Results() {
           </AnimatePresence>
         </div>
       </div>
+      {chatOpen && (
+  <motion.div
+    initial={{ opacity: 0, scale: 0.8 }}
+    animate={{ opacity: 1, scale: 1 }}
+    exit={{ opacity: 0, scale: 0.8 }}
+    className={`fixed bottom-6 right-6 w-[400px] ${
+      isMinimized ? 'h-[60px]' : 'h-[550px]'
+    } flex flex-col rounded-2xl shadow-2xl z-50 overflow-hidden transition-all duration-300 bg-gradient-to-b from-purple-900 to-indigo-900 border border-purple-500/20`}
+  >
+    {/* Header with gradient */}
+    <div 
+      className="flex items-center justify-between p-4 bg-gradient-to-r from-purple-700 to-indigo-700"
+      onClick={() => isMinimized && setIsMinimized(false)}
+    >
+      <div className="flex items-center gap-3">
+        <div className="relative">
+          <div className="w-10 h-10 rounded-full bg-gradient-to-r from-yellow-400 to-orange-500 flex items-center justify-center">
+            <span className="text-xl">🤖</span>
+          </div>
+          <div className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-green-400 border-2 border-indigo-700"></div>
+        </div>
+        <div>
+          <h3 className="font-bold text-white">Election Assistant</h3>
+          <p className="text-xs text-purple-200">
+            {isBotTyping ? 'Typing...' : 'Online'}
+          </p>
+        </div>
+      </div>
+      <div className="flex items-center gap-2">
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            setIsMinimized(!isMinimized);
+          }}
+          className="p-1 rounded-full hover:bg-white/10 transition"
+          title={isMinimized ? 'Maximize' : 'Minimize'}
+        >
+          {isMinimized ? (
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3"></path>
+            </svg>
+          ) : (
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="8" y1="6" x2="21" y2="6"></line>
+              <line x1="8" y1="12" x2="21" y2="12"></line>
+              <line x1="8" y1="18" x2="21" y2="18"></line>
+              <line x1="3" y1="6" x2="3" y2="6"></line>
+              <line x1="3" y1="12" x2="3" y2="12"></line>
+              <line x1="3" y1="18" x2="3" y2="18"></line>
+            </svg>
+          )}
+        </button>
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            setChatOpen(false);
+          }}
+          className="p-1 rounded-full hover:bg-white/10 transition"
+          title="Close"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    {!isMinimized && (
+      <>
+        {/* Messages container with subtle pattern */}
+        <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI2IiBoZWlnaHQ9IjYiPgo8cmVjdCB3aWR0aD0iNiIgaGVpZ2h0PSI2IiBmaWxsPSIjMDAwMDAwIiBvcGFjaXR5PSIwLjAzIj48L3JlY3Q+CjxwYXRoIGQ9Ik0wIDBMNiA2TTYgMEwwIDYiIHN0cm9rZT0iIzAwMDAwMCIgc3Ryb2tlLW9wYWNpdHk9IjAuMDYiIHN0cm9rZS13aWR0aD0iMSI+PC9wYXRoPgo8L3N2Zz4=')]">
+          {chatMessages.length === 0 ? (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="text-center p-6 rounded-xl bg-gradient-to-br from-purple-800/30 to-indigo-800/30 backdrop-blur-sm border border-purple-500/20"
+            >
+              <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-r from-purple-600 to-indigo-600 flex items-center justify-center">
+                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                </svg>
+              </div>
+              <h4 className="font-bold text-white mb-2">Election Results Assistant</h4>
+              <p className="text-sm text-purple-200">
+                Ask me anything about these election results. I can analyze trends, compare candidates, and explain the voting patterns.
+              </p>
+            </motion.div>
+          ) : (
+            chatMessages.map((msg, idx) => (
+              <motion.div
+                key={idx}
+                initial={{ opacity: 0, x: msg.sender === 'user' ? 20 : -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.3 }}
+                className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}
+              >
+                <div
+                  className={`max-w-[80%] p-4 rounded-2xl ${
+                    msg.sender === 'user'
+                      ? 'bg-gradient-to-br from-indigo-600 to-purple-600 text-white'
+                      : 'bg-gradient-to-br from-gray-800 to-gray-900 text-gray-100 border border-gray-700'
+                  } shadow-md`}
+                >
+                  {msg.sender === 'bot' && (
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="w-6 h-6 rounded-full bg-gradient-to-r from-yellow-400 to-orange-400 flex items-center justify-center text-xs">
+                        🤖
+                      </div>
+                      <span className="text-xs font-semibold text-purple-300">Election Bot</span>
+                    </div>
+                  )}
+                  <div className="whitespace-pre-wrap text-sm">
+                    {msg.text.split('\n').map((paragraph, i) => (
+                      <p key={i} className="mb-2 last:mb-0">
+                        {paragraph}
+                      </p>
+                    ))}
+                  </div>
+                  {msg.sender === 'user' && (
+                    <div className="text-right mt-1">
+                      <span className="text-xs text-purple-200 opacity-70">
+                        {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              </motion.div>
+            ))
+          )}
+          {isBotTyping && (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="flex items-start gap-2"
+            >
+              <div className="w-8 h-8 rounded-full bg-gradient-to-r from-gray-700 to-gray-800 flex items-center justify-center flex-shrink-0">
+                <span className="text-sm">🤖</span>
+              </div>
+              <div className="bg-gray-800 rounded-2xl p-3">
+                <div className="flex space-x-2">
+                  <div className="w-2 h-2 rounded-full bg-gray-400 animate-bounce" style={{ animationDelay: '0ms' }}></div>
+                  <div className="w-2 h-2 rounded-full bg-gray-400 animate-bounce" style={{ animationDelay: '150ms' }}></div>
+                  <div className="w-2 h-2 rounded-full bg-gray-400 animate-bounce" style={{ animationDelay: '300ms' }}></div>
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </div>
+
+        {/* Input area with suggestions */}
+        <div className="p-4 border-t border-purple-500/20 bg-gradient-to-b from-purple-900/80 to-indigo-900/80 backdrop-blur-sm">
+          {/* Quick suggestion chips */}
+          {chatMessages.length === 0 && (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3 }}
+              className="flex flex-wrap gap-2 mb-3"
+            >
+              {[
+                "Who won the election?",
+                "Show voting statistics",
+                "Explain the results",
+                "Compare top candidates"
+              ].map((suggestion, i) => (
+                <button
+                  key={i}
+                  onClick={() => {
+                    setChatInput(suggestion);
+                    document.getElementById('chat-input')?.focus();
+                  }}
+                  className="text-xs px-3 py-1.5 rounded-full bg-purple-700/50 hover:bg-purple-600/70 text-purple-100 transition"
+                >
+                  {suggestion}
+                </button>
+              ))}
+            </motion.div>
+          )}
+          
+          <div className="flex gap-2">
+            <div className="flex-1 relative">
+              <input
+                id="chat-input"
+                value={chatInput}
+                onChange={(e) => setChatInput(e.target.value)}
+                onKeyPress={(e) => e.key === 'Enter' && handleSendChat()}
+                className="w-full px-4 py-3 rounded-xl bg-gray-800/70 border border-gray-700 focus:border-purple-500 focus:ring-1 focus:ring-purple-500/30 text-white placeholder-gray-400 text-sm outline-none transition"
+                placeholder="Ask about the election results..."
+              />
+              <button
+                onClick={() => {
+                  if (chatInput.trim()) {
+                    handleSendChat();
+                  }
+                }}
+                className="absolute right-2 top-1/2 transform -translate-y-1/2 p-1 text-gray-400 hover:text-purple-300 transition"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="22" y1="2" x2="11" y2="13"></line>
+                  <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                </svg>
+              </button>
+            </div>
+            <button
+              onClick={handleSendChat}
+              disabled={!chatInput.trim()}
+              className={`p-3 rounded-xl flex items-center justify-center ${
+                chatInput.trim()
+                  ? 'bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white'
+                  : 'bg-gray-700 text-gray-500 cursor-not-allowed'
+              } transition`}
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="22" y1="2" x2="11" y2="13"></line>
+                <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+              </svg>
+            </button>
+          </div>
+        </div>
+      </>
+    )}
+  </motion.div>
+)}
+      <audio id="bot-sound" src="/happy-pop-3-185288.mp3" preload="auto"></audio>
+
+
     </div>
   );
 }
