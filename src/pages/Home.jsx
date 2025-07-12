@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Canvas } from '@react-three/fiber';
@@ -155,6 +155,55 @@ const features = [
   { title: "Timed Elections", description: "Automatic open and close.", icon: <FaClock /> },
   { title: "Private Elections", description: "Whitelist-based access control.", icon: <FaLock /> },
 ];
+//feature cards
+const FeatureCard = ({ title, description, icon, opacity }) => (
+  <motion.div
+    className="min-w-[250px] sm:min-w-[300px] h-[280px] sm:h-[300px] m-1 flex flex-col justify-center items-center text-center p-6 bg-white dark:bg-gray-900 rounded-2xl shadow-lg border dark:border-gray-700"
+    style={{ opacity }}
+  >
+    <div className="text-4xl text-indigo-600 mb-4">{icon}</div>
+    <h3 className="text-xl font-bold text-gray-800 dark:text-white mb-2">{title}</h3>
+    <p className="text-base text-gray-600 dark:text-gray-300">{description}</p>
+  </motion.div>
+);
+
+const containerRef = useRef(null);
+  const [scrollLeft, setScrollLeft] = useState(0);
+  const [direction, setDirection] = useState(1);
+
+  useEffect(() => {
+    const scrollInterval = setInterval(() => {
+      if (containerRef.current) {
+        const container = containerRef.current;
+        container.scrollLeft += direction * 1.5;
+        setScrollLeft(container.scrollLeft);
+
+        // Bounce back at ends
+        if (
+          container.scrollLeft + container.offsetWidth >= container.scrollWidth - 2 ||
+          container.scrollLeft <= 2
+        ) {
+          setDirection((prev) => -prev);
+        }
+      }
+    }, 15);
+
+    return () => clearInterval(scrollInterval);
+  }, [direction]);
+
+  const getOpacity = (index) => {
+    const base = index * 280; // card + gap width
+    const delta = Math.abs(scrollLeft - base);
+    if (delta > 500) return 0.3;
+    if (delta > 300) return 0.6;
+    return 1;
+  };
+
+
+
+
+
+
 
   const buttonColors =  {
   Election: {
@@ -341,43 +390,24 @@ const features = [
   </div>
 
   {/* Section Content */}
-  <div className="max-w-7xl mx-auto px-6 text-center">
-    <motion.h2
-      initial={{ opacity: 0, y: 40 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true }}
-      transition={{ duration: 0.8 }}
-      className="text-4xl font-extrabold text-white mb-16 tracking-tight"
-    >
-      Key Features
-    </motion.h2>
+  <section className="w-full py-8 px-4 md:px-12 bg-[#0b0b0b]">
+      <h2 className="text-2xl sm:text-3xl font-bold mb-6 text-center text-gray-900 dark:text-white">Key Features</h2>
 
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-10">
-      {features.slice(0, 6).map(({ title, description, icon }, i) => (
-        <motion.div
-          key={i}
-          initial={{ opacity: 0, y: 40 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.6, delay: i * 0.2 }}
-          whileHover={{ scale: 1.05, rotate: 1 }}
-          className="relative group bg-[#0f172a]/80 backdrop-blur-md cursor-pointer rounded-3xl p-8 shadow-[0_0_20px_rgba(255,255,255,0.1)] text-white flex flex-col items-center text-center transition-all duration-300 border border-gray-700 hover:border-cyan-400"
-        >
-          {/* Glowing border on hover */}
-          <div className="absolute inset-0 rounded-3xl border-2 border-cyan-400 opacity-0 group-hover:opacity-100 transition-opacity duration-500 animate-glow pointer-events-none" />
-
-          {/* Icon */}
-          <div className="text-4xl mb-5 z-10">{icon}</div>
-
-          {/* Title */}
-          <h3 className="text-2xl font-semibold mb-2 z-10">{title}</h3>
-
-          {/* Description */}
-          <p className="text-gray-300 z-10 text-sm">{description}</p>
-        </motion.div>
-      ))}
-    </div>
-  </div>
+      <div
+        className="overflow-x-auto h-[300px]  whitespace-nowrap flex no-scrollbar"
+        ref={containerRef}
+      >
+        {features.map((feature, index) => (
+          <FeatureCard
+            key={index}
+            icon={feature.icon}
+            title={feature.title}
+            description={feature.description}
+            opacity={getOpacity(index)}
+          />
+        ))}
+      </div>
+    </section>
 </section>
 
 <h2 className="text-4xl md:text-5xl text-center font-bold text-white z-50 drop-shadow-lg">
@@ -417,7 +447,7 @@ const features = [
   <ScrambleText2
     text="Our blockchain-based voting platform ensures transparency, security, and real-time verification through immutable ledger technology. Leveraging smart contracts, votes are automatically validated without human intervention, minimizing the risk of tampering or fraud. All data is stored in a decentralized manner, ensuring resilience against single points of failure.
      The platform supports both public and private elections, offering customizable access control. Designed for scalability and accessibility, it empowers every citizen to cast their vote safely, anonymously, and with full confidence in the integrity of the process."
-    className=" font-hacker  text-blue-800"
+   id="about" className=" font-hacker  text-blue-800"
   />
 </motion.div>
 
