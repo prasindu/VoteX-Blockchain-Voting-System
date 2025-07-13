@@ -16,6 +16,9 @@ import { loadSlim } from 'tsparticles-slim'; // Use loadSlim instead of loadFull
 import Spline from '@splinetool/react-spline';
 import { ChevronDown } from "lucide-react";
 function Home() {
+
+
+  
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const [sparks, setSparks] = useState([]);
   const [titleIndex, setTitleIndex] = useState(0);
@@ -235,31 +238,27 @@ const containerRef = useRef(null);
   await loadSlim(engine);
 }, []);
 
-  const handleMouseMove = (e) => {
-    const x = e.clientX;
-    const y = e.clientY;
-    setPosition({ x, y });
-
+ 
     const id = Date.now();
-    const newSpark = {
-      id,
-      x,
-      y,
-      dx: (Math.random() - 0.5) * 50,
-      dy: (Math.random() - 0.5) * 50,
-    };
+  //   const newSpark = {
+  //     id,
+  //     x,
+  //     y,
+  //     dx: (Math.random() - 0.5) * 50,
+  //     dy: (Math.random() - 0.5) * 50,
+  //   };
 
-    setSparks((prev) => [...prev.slice(-200), newSpark]);
+  //   setSparks((prev) => [...prev.slice(-200), newSpark]);
 
-    setTimeout(() => {
-      setSparks((prev) => prev.filter((s) => s.id !== id));
-    }, 200);
-  };
+  //   setTimeout(() => {
+  //     setSparks((prev) => prev.filter((s) => s.id !== id));
+  //   }, 200);
+  // };
 
-  useEffect(() => {
-    window.addEventListener('mousemove', handleMouseMove);
-    return () => window.removeEventListener('mousemove', handleMouseMove);
-  }, []);
+  // useEffect(() => {
+  //   window.addEventListener('mousemove', handleMouseMove);
+  //   return () => window.removeEventListener('mousemove', handleMouseMove);
+  // }, []);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -280,80 +279,109 @@ const containerRef = useRef(null);
     setOpenIndex(openIndex === i ? null : i);
   };
 
-  return (
-    <div className='min-h-screen w-full bg-darkbg text-white'>
+ // 🧠 Mouse hover effect 3D background
+const bgRef = useRef(null);
+
+const handleMouseMove = (e) => {
+  const bg = bgRef.current;
+  if (!bg) return;
+
+  const { width, height, left, top } = bg.getBoundingClientRect();
+  const x = e.clientX - left;
+  const y = e.clientY - top;
+
+  const rotateX = ((y / height) - 0.5) * -15;
+  const rotateY = ((x / width) - 0.5) * 15;
+
+  bg.style.transform = `rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
+};
+
+const handleMouseLeave = () => {
+  const bg = bgRef.current;
+  if (bg) bg.style.transform = `rotateX(0deg) rotateY(0deg)`;
+};
+
+return (
+  <div className="min-h-screen w-full  bg-darkbg text-white">
     <div
-  className="min-h-screen flex flex-col items-center justify-center px-4  relative overflow-hidden"
->
-  {/* 🔁 Background Video */}
-  <video
-    autoPlay
-    loop
-    muted
-    playsInline
-    className="absolute top-0 left-0 w-full h-full object-cover z-0"
-  >
-    <source src="/6.mp4" type="video/mp4" />
-    Your browser does not support the video tag.
-  </video>
+      className="min-h-screen w-full flex  flex-col items-center justify-center relative overflow-hidden"
+      style={{ perspective: '1000px' }}
+      onMouseMove={handleMouseMove}
+      onMouseLeave={handleMouseLeave}
+    >
+      {/* ✅ 3D Tilt Background Image with ref attached */}
+      <div
+        ref={bgRef}
+        className="absolute top-0 left-0 w-full h-full bg-cover bg-center transition-transform duration-200 ease-out will-change-transform"
+        style={{
+          backgroundImage: 'url("/back4.jpg")',
+          transformStyle: 'preserve-3d',
+        }}
+      />
 
-  {/* 🔲 Optional: Dark overlay for contrast */}
-  {/* <div className="absolute top-0 left-0 w-full h-full bg-black/60 z-0" /> */}
+      {/* 🔲 Optional: Dark overlay */}
+      {/* <div className="absolute top-0 left-0 w-full h-full bg-black/60 z-0" /> */}
 
-  {/* ✨ Animated Title & Subtitle */}
-  <motion.div
-    initial={{ opacity: 0, y: 40 }}
-    animate={{ opacity: 1, y: 0 }}
-    transition={{ duration: 0.8 }}
-    className="text-center text-white z-20 mb-8"
-  >
-    <AnimatePresence mode="wait">
-      <motion.h1
-        key={titles[titleIndex]}
-        initial={{ opacity: 0, y: 10 }}
+      {/* ✨ Animated Title & Subtitle */}
+      <motion.div
+        initial={{ opacity: 0, y: 40 }}
         animate={{ opacity: 1, y: 0 }}
-        exit={{ opacity: 0, y: -10 }}
-        transition={{ duration: 0.6 }}
-        className="text-5xl md:text-6xl font-bold mb-4 drop-shadow-lg"
+        transition={{ duration: 0.8 }}
+        className="text-center text-white z-20 mb-8"
       >
-        {titles[titleIndex]}
-      </motion.h1>
-    </AnimatePresence>
+        <AnimatePresence mode="wait">
+          <motion.h1
+            key={titles[titleIndex]}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.6 }}
+            className="text-5xl md:text-6xl font-bold mb-4 drop-shadow-lg"
+          >
+            {titles[titleIndex]}
+          </motion.h1>
+        </AnimatePresence>
 
-    <AnimatePresence mode="wait">
-      <motion.p
-        key={subtitles[subtitleIndex]}
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        transition={{ duration: 0.6 }}
-        className="text-lg md:text-xl opacity-80 max-w-2xl mx-auto"
+        <AnimatePresence mode="wait">
+          <motion.p
+            key={subtitles[subtitleIndex]}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.6 }}
+            className="text-lg md:text-xl opacity-80 max-w-2xl mx-auto"
+          >
+            {subtitles[subtitleIndex]}
+          </motion.p>
+        </AnimatePresence>
+      </motion.div>
+
+      {/* 📦 Navigation Cards */}
+      <motion.div
+        initial={{ opacity: 0, y: 30 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.2, duration: 0.6 }}
+        className="grid grid-cols-1 md:grid-cols-3 gap-6 z-20 mb-10"
       >
-        {subtitles[subtitleIndex]}
-      </motion.p>
-    </AnimatePresence>
-  </motion.div>
+        {["Election", "Vote", "Results"].map((label, i) => (
+          <Link to={`/${label.toLowerCase()}`} key={i}>
+            <motion.div
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              className={`transition duration-300 text-white p-4 rounded-xl shadow-lg font-semibold text-lg text-center ${buttonColors[label].base} ${buttonColors[label].hover}`}
+            >
+              <ScrambleText text={label} />
+            </motion.div>
+          </Link>
+        ))}
+      </motion.div>
+      </div>
+      
+    
+ 
 
-  {/* 📦 Navigation Cards */}
-  <motion.div
-    initial={{ opacity: 0, y: 30 }}
-    animate={{ opacity: 1, y: 0 }}
-    transition={{ delay: 0.2, duration: 0.6 }}
-    className="grid grid-cols-1 md:grid-cols-3 gap-6 z-20 mb-10"
-  >
-    {["Election", "Vote", "Results"].map((label, i) => (
-      <Link to={`/${label.toLowerCase()}`} key={i}>
-        <motion.div
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-          className={`transition duration-300 text-white p-4 rounded-xl shadow-lg font-semibold text-lg text-center ${buttonColors[label].base} ${buttonColors[label].hover}`}
-        >
-          <ScrambleText text={label} />
-        </motion.div>
-      </Link>
-    ))}
-  </motion.div>
-</div>
+
+
 <section
   className="relative py-20 min-h-screen"
   style={{
@@ -619,7 +647,8 @@ const containerRef = useRef(null);
 
 
     </div>
+    
   );
-}
+};
 
 export default Home;
