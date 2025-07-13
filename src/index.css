@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 
-@import "tailwindcss/utilities";
+@tailwind utilities;
 
 
 
