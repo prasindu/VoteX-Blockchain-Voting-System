@@ -1,8 +1,12 @@
 @import "tailwindcss";
 
-@tailwind utilities;
+
+@import "tailwindcss/utilities";
+
+
 
 @layer utilities {
+  /* Fade-in Animation */
   .animate-fade-in {
     animation: fadeIn 1.2s ease-out both;
   }
@@ -17,17 +21,70 @@
       transform: translateY(0);
     }
   }
+
+  /* Blob Animation */
+  .animate-blob {
+    animation: blob 7s infinite cubic-bezier(0.6, -0.28, 0.735, 0.045);
+  }
+
+  @keyframes blob {
+    0% {
+      transform: translate(0px, 0px) scale(1);
+    }
+    33% {
+      transform: translate(30px, -50px) scale(1.1);
+    }
+    66% {
+      transform: translate(-20px, 20px) scale(0.9);
+    }
+    100% {
+      transform: translate(0px, 0px) scale(1);
+    }
+  }
+
+  /* Custom Animation Delays */
+  .animation-delay-2000 {
+    animation-delay: 2s;
+  }
+
+  .animation-delay-4000 {
+    animation-delay: 4s;
+  }
+
+  /* Custom Pulse Animation */
+  /* Note: 'pulse' is a default Tailwind animation. This extends it with a custom duration. */
+  .animate-pulse-slow {
+    animation: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+
+  /* Basic Text Shadow */
+  /* If you need more complex text shadows, consider a Tailwind plugin or extend your config */
+  .text-shadow {
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+  }
+
+  /* Drop Shadow - This is a standard Tailwind class, ensure it's not redundant */
+  /* No need to re-add this if your Tailwind setup is default */
+  /* If you explicitly need it defined here for some reason: */
+  /* .drop-shadow-lg {
+    filter: drop-shadow(0 10px 8px rgb(0 0 0 / 0.2)) drop-shadow(0 4px 3px rgb(0 0 0 / 0.1));
+  } */
 }
 
-body{
+
+/* Global Base Styles */
+body {
   background-color: #0b0b0b;
 }
-#about{
-  font-family: 'Share Tech Mono';
-}
-/* src/styles/neon.css */
 
-/* src/styles/neon.css */
+/* Specific Element Styling */
+#about {
+  font-family: 'Share Tech Mono', monospace; /* Added 'monospace' fallback */
+}
+
+
+/* Neon Animations & Styles */
+/* These can also be in their own file (e.g., src/styles/neon.css) and imported if preferred */
 @keyframes fadeTrail {
   0% {
     opacity: 1;
@@ -61,7 +118,7 @@ body{
   border-radius: 9999px;
   background-color: #00f7ff;
   position: absolute;
-  offset-rotate: 0deg;
+  offset-rotate: 0deg; /* This property needs 'offset-path' or 'motion-path' to be effective */
   box-shadow: 0 0 5px #00f7ff, 0 0 10px #00f7ff;
 }
 
@@ -73,6 +130,3 @@ body{
   stroke-dasharray: 5, 5;
   animation: fadeTrail 3s linear infinite;
 }
-
-
-

@@ -141,12 +141,12 @@ function Admin() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-black via-zinc-800 to-black p-6">
+    <div className="min-h-screen bg-gradient-to-br from-blue-950 via-gray-950 to-indigo-950 p-6">
          <div className="fixed inset-0 overflow-hidden pointer-events-none">
               {[...Array(50)].map((_, i) => (
                 <motion.div
                   key={i}
-                  className="absolute w-2 h-2 bg-white rounded-full opacity-20"
+                  className="absolute w-2 h-2 bg-purple-300 rounded-full opacity-10" 
                   animate={{
                     x: [0, Math.random() * 100 - 50],
                     y: [0, Math.random() * 100 - 50],
@@ -171,27 +171,27 @@ function Admin() {
           initial={{ opacity: 0, y: 40 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
-          className="bg-white/10 backdrop-blur-xl rounded-3xl shadow-2xl border border-white/20 overflow-hidden"
+          className="bg-blue-900/20 backdrop-blur-xl rounded-3xl shadow-2xl border border-purple-500/30 overflow-hidden"
         >
           {/* Header */}
-          <div className="bg-gradient-to-r from-gray-400 to-gray-900 p-8">
+          <div className="bg-gradient-to-r from-purple-700 to-indigo-900 p-8"> {/* Vibrant purple-to-indigo gradient */}
             <div className="flex items-center justify-between">
               <div className="text-center flex-1">
-                <Vote className="w-16 h-16 mx-auto mb-4 text-white" />
+                <Vote className="w-16 h-16 mx-auto mb-4 text-purple-200" /> {/* Icon color */}
                 <h2 className="text-4xl font-bold text-white mb-2">Create Election</h2>
-                <p className="text-blue-100">Set up a new democratic voting process</p>
+                <p className="text-indigo-200">Set up a new democratic voting process</p> {/* Subtitle color */}
               </div>
               
               {/* Wallet Status */}
               {isConnected && (
-                <div className="flex items-center space-x-4 bg-gradient-to-r from-gray-400 to-gray-900 rounded-xl p-4">
+                <div className="flex items-center space-x-4 bg-gradient-to-r from-indigo-800 to-blue-900 rounded-xl p-4"> {/* Complementary dark gradient */}
                   <div className="text-right">
                     <p className="text-white text-sm">Connected Wallet</p>
-                    <p className="text-blue-200 font-mono text-sm">{formatAddress(walletAddress)}</p>
+                    <p className="text-purple-200 font-mono text-sm">{formatAddress(walletAddress)}</p> {/* Wallet address color */}
                   </div>
                   <button
                     onClick={disconnectWallet}
-                    className="p-2 text-white hover:bg-white/20 rounded-lg transition-colors duration-300"
+                    className="p-2 text-purple-200 hover:bg-white/20 rounded-lg transition-colors duration-300"
                     title="Disconnect Wallet"
                   >
                     <LogOut className="w-5 h-5" />
@@ -209,7 +209,7 @@ function Admin() {
                 className={`w-full py-4 text-white rounded-xl mb-6 font-semibold text-lg transition-all duration-300 shadow-lg flex items-center justify-center ${
                   isLoading 
                     ? 'bg-gray-600 cursor-not-allowed' 
-                    : 'bg-gradient-to-r from-gray-900 to-gray-400 hover:from-slate-500 hover:to-slate-950'
+                    : 'bg-gradient-to-r from-blue-600 to-purple-700 hover:from-blue-700 hover:to-purple-800 shadow-blue-500/30' // Vibrant gradient with shadow
                 }`}
                 whileHover={!isLoading ? { scale: 1.02 } : {}}
                 whileTap={!isLoading ? { scale: 0.98 } : {}}
@@ -249,15 +249,15 @@ function Admin() {
                 className="space-y-6"
               >
                 {/* Election Details */}
-                <div className="bg-white/5 rounded-2xl p-6 border border-white/10">
+                <div className="bg-blue-900/20 rounded-2xl p-6 border border-blue-700/30"> {/* Translucent blue background with blue border */}
                   <h3 className="text-xl font-semibold text-white mb-4 flex items-center">
-                    <Calendar className="w-5 h-5 mr-2" />
+                    <Calendar className="w-5 h-5 mr-2 text-purple-300" /> {/* Icon color */}
                     Election Details
                   </h3>
                   
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-300 mb-2">
+                      <label className="block text-sm font-medium text-blue-200 mb-2"> {/* Label color */}
                         Election Name
                       </label>
                       <input
@@ -265,12 +265,12 @@ function Admin() {
                         placeholder="Enter election name"
                         value={electionName}
                         onChange={(e) => setElectionName(e.target.value)}
-                        className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        className="w-full px-4 py-3 bg-blue-900/30 border border-blue-700/40 rounded-xl text-white placeholder-blue-300/70 focus:outline-none focus:ring-2 focus:ring-purple-400 focus:border-transparent"
                       />
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-300 mb-2">
+                      <label className="block text-sm font-medium text-blue-200 mb-2">
                         Election Image
                       </label>
                       <div className="flex items-center space-x-3">
@@ -284,10 +284,10 @@ function Admin() {
                         />
                         <label
                           htmlFor="election-image"
-                          className={`flex items-center px-4 py-3 border border-white/20 rounded-xl text-white cursor-pointer transition-all duration-300 ${
+                          className={`flex items-center px-4 py-3 border border-blue-700/40 rounded-xl text-white cursor-pointer transition-all duration-300 ${
                             uploadProgress.election
                               ? 'bg-gray-600 cursor-not-allowed'
-                              : 'bg-white/10 hover:bg-white/20'
+                              : 'bg-blue-800/30 hover:bg-blue-700/50' // Translucent blue button
                           }`}
                         >
                           {uploadProgress.election ? (
@@ -300,7 +300,7 @@ function Admin() {
                             </>
                           ) : (
                             <>
-                              <Image className="w-4 h-4 mr-2" />
+                              <Image className="w-4 h-4 mr-2 text-purple-300" /> {/* Icon color */}
                               Upload Image
                             </>
                           )}
@@ -309,33 +309,33 @@ function Admin() {
                           <img
                             src={electionImagePreview}
                             alt="Preview"
-                            className="w-12 h-12 rounded-lg object-cover"
+                            className="w-12 h-12 rounded-lg object-cover border border-purple-500/50" // Border for image preview
                           />
                         )}
                       </div>
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-300 mb-2">
+                      <label className="block text-sm font-medium text-blue-200 mb-2">
                         Start Time
                       </label>
                       <input
                         type="datetime-local"
                         value={startTime}
                         onChange={(e) => setStartTime(e.target.value)}
-                        className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        className="w-full px-4 py-3 bg-blue-900/30 border border-blue-700/40 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-purple-400 focus:border-transparent"
                       />
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-300 mb-2">
+                      <label className="block text-sm font-medium text-blue-200 mb-2">
                         End Time
                       </label>
                       <input
                         type="datetime-local"
                         value={endTime}
                         onChange={(e) => setEndTime(e.target.value)}
-                        className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        className="w-full px-4 py-3 bg-blue-900/30 border border-blue-700/40 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-purple-400 focus:border-transparent"
                       />
                     </div>
                   </div>
@@ -346,7 +346,7 @@ function Admin() {
                         type="checkbox"
                         checked={isPublic}
                         onChange={() => setIsPublic(!isPublic)}
-                        className="mr-3 w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                        className="mr-3 w-4 h-4 rounded border-purple-400 text-purple-500 focus:ring-purple-400" // Checkbox styling
                       />
                       <span className="text-sm font-medium">Public Election (anyone can vote)</span>
                     </label>
@@ -355,9 +355,9 @@ function Admin() {
 
                 {/* Allowed Voters */}
                 {!isPublic && (
-                  <div className="bg-white/5 rounded-2xl p-6 border border-white/10">
+                  <div className="bg-blue-900/20 rounded-2xl p-6 border border-blue-700/30">
                     <h3 className="text-xl font-semibold text-white mb-4 flex items-center">
-                      <Users className="w-5 h-5 mr-2" />
+                      <Users className="w-5 h-5 mr-2 text-purple-300" />
                       Allowed Voters
                     </h3>
                     <textarea
@@ -365,21 +365,21 @@ function Admin() {
                       value={allowedVoters}
                       onChange={(e) => setAllowedVoters(e.target.value)}
                       rows="4"
-                      className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                      className="w-full px-4 py-3 bg-blue-900/30 border border-blue-700/40 rounded-xl text-white placeholder-blue-300/70 focus:outline-none focus:ring-2 focus:ring-purple-400 focus:border-transparent resize-none"
                     />
                   </div>
                 )}
 
                 {/* Candidates */}
-                <div className="bg-white/5 rounded-2xl p-6 border border-white/10">
+                <div className="bg-blue-900/20 rounded-2xl p-6 border border-blue-700/30">
                   <div className="flex items-center justify-between mb-4">
                     <h3 className="text-xl font-semibold text-white flex items-center">
-                      <Users className="w-5 h-5 mr-2" />
+                      <Users className="w-5 h-5 mr-2 text-purple-300" />
                       Candidates
                     </h3>
                     <button
                       onClick={addCandidate}
-                      className="px-4 py-2 bg-gradient-to-r from-gray-900 to-gray-600 hover:from-slate-600 hover:to-slate-900 text-white rounded-lg transition-colors duration-300 text-sm font-medium"
+                      className="px-4 py-2 bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-700 hover:to-teal-800 text-white rounded-lg transition-colors duration-300 text-sm font-medium shadow-md" // Distinct "add" button
                     >
                       + Add Candidate
                     </button>
@@ -391,7 +391,7 @@ function Admin() {
                         key={index}
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
-                        className="flex items-center space-x-4 p-4 bg-white/10 rounded-xl border border-white/10"
+                        className="flex items-center space-x-4 p-4 bg-blue-800/30 rounded-xl border border-blue-700/30" // Candidate item styling
                       >
                         <div className="flex-1">
                           <input
@@ -399,7 +399,7 @@ function Admin() {
                             placeholder={`Candidate ${index + 1} name`}
                             value={candidate.name}
                             onChange={(e) => updateCandidate(index, 'name', e.target.value)}
-                            className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            className="w-full px-3 py-2 bg-blue-900/30 border border-blue-700/40 rounded-lg text-white placeholder-blue-300/70 focus:outline-none focus:ring-2 focus:ring-purple-400"
                           />
                         </div>
                         
@@ -414,10 +414,10 @@ function Admin() {
                           />
                           <label
                             htmlFor={`candidate-image-${index}`}
-                            className={`flex items-center px-3 py-2 border border-white/20 rounded-lg text-white cursor-pointer transition-all duration-300 text-sm ${
+                            className={`flex items-center px-3 py-2 border border-blue-700/40 rounded-lg text-white cursor-pointer transition-all duration-300 text-sm ${
                               uploadProgress[`candidate-${index}`]
                                 ? 'bg-gray-600 cursor-not-allowed'
-                                : 'bg-white/10 hover:bg-white/20'
+                                : 'bg-blue-800/30 hover:bg-blue-700/50'
                             }`}
                           >
                             {uploadProgress[`candidate-${index}`] ? (
@@ -430,7 +430,7 @@ function Admin() {
                               </>
                             ) : (
                               <>
-                                <Upload className="w-4 h-4 mr-1" />
+                                <Upload className="w-4 h-4 mr-1 text-purple-300" />
                                 Image
                               </>
                             )}
@@ -439,7 +439,7 @@ function Admin() {
                             <img
                               src={getCandidateImagePreview(candidate)}
                               alt={`${candidate.name} preview`}
-                              className="w-8 h-8 rounded-lg object-cover"
+                              className="w-8 h-8 rounded-lg object-cover border border-purple-500/50"
                             />
                           )}
                         </div>
@@ -447,7 +447,7 @@ function Admin() {
                         {candidateInputs.length > 1 && (
                           <button
                             onClick={() => removeCandidate(index)}
-                            className="px-3 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg transition-colors duration-300 text-sm"
+                            className="px-3 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors duration-300 text-sm shadow-md" // Red for remove
                           >
                             Remove
                           </button>
@@ -464,7 +464,7 @@ function Admin() {
                   className={`w-full py-4 font-bold text-white rounded-xl text-lg transition-all duration-300 ${
                     isLoading || Object.values(uploadProgress).some(Boolean)
                       ? 'bg-gray-600 cursor-not-allowed'
-                      : 'bg-gradient-to-r from-gray-500 to-gray-900 hover:from-slate-400 hover:to-slate-900 shadow-lg hover:shadow-xl'
+                      : 'bg-gradient-to-r from-purple-600 to-indigo-700 hover:from-purple-700 hover:to-indigo-800 shadow-lg shadow-purple-500/30 hover:shadow-xl' // Stronger main button gradient and shadow
                   }`}
                   whileHover={!isLoading && !Object.values(uploadProgress).some(Boolean) ? { scale: 1.02 } : {}}
                   whileTap={!isLoading && !Object.values(uploadProgress).some(Boolean) ? { scale: 0.98 } : {}}
