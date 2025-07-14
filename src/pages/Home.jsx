@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence,useMotionValue, useTransform } from 'framer-motion';
 import { Canvas } from '@react-three/fiber';
 import { ScrambleText } from './ScrambleText';
 import ScrambleText2 from "./ScrambleText2";
@@ -16,6 +16,9 @@ import { loadSlim } from 'tsparticles-slim'; // Use loadSlim instead of loadFull
 import Spline from '@splinetool/react-spline';
 import { ChevronDown } from "lucide-react";
 function Home() {
+
+
+  
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const [sparks, setSparks] = useState([]);
   const [titleIndex, setTitleIndex] = useState(0);
@@ -235,31 +238,27 @@ const containerRef = useRef(null);
   await loadSlim(engine);
 }, []);
 
-  const handleMouseMove = (e) => {
-    const x = e.clientX;
-    const y = e.clientY;
-    setPosition({ x, y });
-
+ 
     const id = Date.now();
-    const newSpark = {
-      id,
-      x,
-      y,
-      dx: (Math.random() - 0.5) * 50,
-      dy: (Math.random() - 0.5) * 50,
-    };
+  //   const newSpark = {
+  //     id,
+  //     x,
+  //     y,
+  //     dx: (Math.random() - 0.5) * 50,
+  //     dy: (Math.random() - 0.5) * 50,
+  //   };
 
-    setSparks((prev) => [...prev.slice(-200), newSpark]);
+  //   setSparks((prev) => [...prev.slice(-200), newSpark]);
 
-    setTimeout(() => {
-      setSparks((prev) => prev.filter((s) => s.id !== id));
-    }, 200);
-  };
+  //   setTimeout(() => {
+  //     setSparks((prev) => prev.filter((s) => s.id !== id));
+  //   }, 200);
+  // };
 
-  useEffect(() => {
-    window.addEventListener('mousemove', handleMouseMove);
-    return () => window.removeEventListener('mousemove', handleMouseMove);
-  }, []);
+  // useEffect(() => {
+  //   window.addEventListener('mousemove', handleMouseMove);
+  //   return () => window.removeEventListener('mousemove', handleMouseMove);
+  // }, []);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -280,80 +279,168 @@ const containerRef = useRef(null);
     setOpenIndex(openIndex === i ? null : i);
   };
 
-  return (
-    <div className='min-h-screen w-full bg-darkbg text-white'>
-    <div
-  className="min-h-screen flex flex-col items-center justify-center px-4  relative overflow-hidden"
->
-  {/* 🔁 Background Video */}
-  <video
-    autoPlay
-    loop
-    muted
-    playsInline
-    className="absolute top-0 left-0 w-full h-full object-cover z-0"
-  >
-    <source src="/6.mp4" type="video/mp4" />
-    Your browser does not support the video tag.
-  </video>
+ // 🧠 Mouse hover effect 3D background
+const bgRef = useRef(null);
+const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
+const handleMouseMove = (e) => {
+  const bg = bgRef.current;
+  if (!bg) return;
 
-  {/* 🔲 Optional: Dark overlay for contrast */}
-  {/* <div className="absolute top-0 left-0 w-full h-full bg-black/60 z-0" /> */}
+  const { width, height, left, top } = bg.getBoundingClientRect();
+  const x = e.clientX - left;
+  const y = e.clientY - top;
 
-  {/* ✨ Animated Title & Subtitle */}
-  <motion.div
-    initial={{ opacity: 0, y: 40 }}
-    animate={{ opacity: 1, y: 0 }}
-    transition={{ duration: 0.8 }}
-    className="text-center text-white z-20 mb-8"
-  >
-    <AnimatePresence mode="wait">
-      <motion.h1
-        key={titles[titleIndex]}
-        initial={{ opacity: 0, y: 10 }}
+  const rotateX = ((y / height) - 0.5) * -15;
+  const rotateY = ((x / width) - 0.5) * 15;
+
+  bg.style.transform = `rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
+
+   // Save normalized position for parallax elements
+
+
+mouseX.set((x / width - 0.5) * 2);
+mouseY.set((y / height - 0.5) * 2);
+
+
+
+
+  setMousePos({
+    x: (x / width - 0.5) * 2,  // range: -1 to 1
+    y: (y / height - 0.5) * 2
+  });
+};
+   const mouseX = useMotionValue(0);
+const mouseY = useMotionValue(0);
+const parallaxX1 = useTransform(mouseX, (val) => val * 10);
+const parallaxY1 = useTransform(mouseY, (val) => val * 10);
+
+const parallaxX2 = useTransform(mouseX, (val) => val * -8);
+const parallaxY2 = useTransform(mouseY, (val) => val * 8);
+
+const handleMouseLeave = () => {
+  const bg = bgRef.current;
+  if (bg) bg.style.transform = `rotateX(0deg) rotateY(0deg)`;
+};
+
+return (
+  <div className="min-h-screen w-full  bg-darkbg text-white">
+  <div
+      className="min-h-screen w-full flex flex-col items-center justify-center relative overflow-hidden"
+      style={{ perspective: '1000px' }}
+      onMouseMove={handleMouseMove}
+      onMouseLeave={handleMouseLeave}
+    >
+      {/* 🔳 3D Tilt Background */}
+      <div
+        ref={bgRef}
+        className="absolute z-0 top-0 left-0 w-full h-full bg-cover bg-center transition-transform duration-200 ease-out will-change-transform"
+        style={{
+          backgroundImage: 'url("/back7.jpg")',
+          transformStyle: 'preserve-3d',
+        }}
+      />
+
+      {/* 🔲 Overlay */}
+      {/* <div className="absolute top-0 left-0 w-full h-full bg-black/50 z-10" /> */}
+
+      {/* 🌟 PNG Decorative Parallax Elements */}
+      <motion.img
+        src="/src/assets/el6.png"
+        alt="element 1"
+        initial={{ opacity: 0, y: 40 }}
         animate={{ opacity: 1, y: 0 }}
-        exit={{ opacity: 0, y: -10 }}
-        transition={{ duration: 0.6 }}
-        className="text-5xl md:text-6xl font-bold mb-4 drop-shadow-lg"
-      >
-        {titles[titleIndex]}
-      </motion.h1>
-    </AnimatePresence>
+        transition={{ delay: 0.4, duration: 1 }}
+         style={{
+    x: parallaxX1,
+    y: parallaxY1,
+  }}
+        className="absolute bottom-0 left-0 w-full h-full object-cover z-0 pointer-events-none"
+      />
 
-    <AnimatePresence mode="wait">
-      <motion.p
-        key={subtitles[subtitleIndex]}
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        transition={{ duration: 0.6 }}
-        className="text-lg md:text-xl opacity-80 max-w-2xl mx-auto"
-      >
-        {subtitles[subtitleIndex]}
-      </motion.p>
-    </AnimatePresence>
-  </motion.div>
+      <motion.img
+        src="/src/assets/el4.png"
+        alt="element 2"
+        initial={{ opacity: 0, y: 60 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.4, duration: 1 }}
+        style={{
+    x: parallaxX2,
+    y: parallaxY2,
+  }}
+        className="absolute bottom-0 left-0 w-full h-full object-cover z-20 pointer-events-none"
+      />
 
-  {/* 📦 Navigation Cards */}
-  <motion.div
-    initial={{ opacity: 0, y: 30 }}
-    animate={{ opacity: 1, y: 0 }}
-    transition={{ delay: 0.2, duration: 0.6 }}
-    className="grid grid-cols-1 md:grid-cols-3 gap-6 z-20 mb-10"
-  >
-    {["Election", "Vote", "Results"].map((label, i) => (
-      <Link to={`/${label.toLowerCase()}`} key={i}>
-        <motion.div
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-          className={`transition duration-300 text-white p-4 rounded-xl shadow-lg font-semibold text-lg text-center ${buttonColors[label].base} ${buttonColors[label].hover}`}
-        >
-          <ScrambleText text={label} />
-        </motion.div>
-      </Link>
-    ))}
-  </motion.div>
-</div>
+      {/* ✨ Animated Title & Subtitle */}
+      <motion.div
+        initial={{ opacity: 0, y: 40 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.8 }}
+        className="text-center text-white z-10 px-4"
+      >
+        <AnimatePresence mode="wait">
+          <motion.h1
+            key={titles[titleIndex]}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.6 }}
+            className="text-3xl md:text-5xl lg:text-6xl font-bold mb-4 drop-shadow-lg"
+          >
+            {titles[titleIndex]}
+          </motion.h1>
+        </AnimatePresence>
+
+        <AnimatePresence mode="wait">
+          <motion.p
+            key={subtitles[subtitleIndex]}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.6 }}
+            className="text-base md:text-lg lg:text-xl opacity-80 max-w-2xl mx-auto"
+          >
+            {subtitles[subtitleIndex]}
+          </motion.p>
+        </AnimatePresence>
+      </motion.div>
+
+      {/* 📦 Navigation Cards */}
+      <motion.div
+        initial={{ opacity: 0, y: 30 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.2, duration: 0.6 }}
+        className="grid grid-cols-1 md:grid-cols-3 gap-6 z-30 mt-8 px-4"
+      >
+        {["Election", "Vote", "Results"].map((label, i) => (
+          <Link to={`/${label.toLowerCase()}`} key={i}>
+            <motion.div
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              className={`transition duration-300 text-white px-6 py-4 rounded-xl font-semibold text-lg text-center ${buttonColors[label].base} ${buttonColors[label].hover}`}
+            >
+              <ScrambleText text={label} />
+            </motion.div>
+          </Link>
+        ))}
+      </motion.div>
+
+      {/* 👣 Footer */}
+      <motion.div
+        initial={{ opacity: 0, y: 100 }}
+        animate={{ opacity: 0.3, y: 0 }}
+        transition={{ duration: 1.2 }}
+        className="absolute bottom-6 text-center w-full text-white text-sm md:text-lg z-20"
+      >
+        Powered by Solidity · React · IPFS · MetaMask
+      </motion.div>
+    </div>
+  
+
+    
+ 
+
+
+
 <section
   className="relative py-20 min-h-screen"
   style={{
@@ -390,7 +477,7 @@ const containerRef = useRef(null);
   </div>
 
   {/* Section Content */}
-  <section className="w-full py-8 px-4 md:px-12 bg-[#0b0b0b]">
+  <section className="w-full py-8 px-4 md:px-12 bg-[#000000]">
       <h2 className="text-2xl sm:text-3xl font-bold mb-6 text-center text-gray-900 dark:text-white">Key Features</h2>
 
       <div
@@ -459,7 +546,7 @@ const containerRef = useRef(null);
 {/*team members*/}
 <section className="text-white py-16 px-4 items-center place-items-center justify-center min-h-screen ">
       <h2 className="text-4xl font-bold text-center mb-12">Meet Our Team</h2>
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-10 place-items-center">
+      <div className="flex flex-wrap justify-center gap-10 place-items-center">
 
         {teamMembers.map((member, i) => (
           <motion.div
@@ -469,7 +556,8 @@ const containerRef = useRef(null);
             whileInView="visible"
             viewport={{ once: true }}
             variants={cardVariants}
-            className="bg-[#1e293b] border items-center  justify-center  border-gray-700 rounded-2xl shadow-2xl hover:scale-105 transform transition-all duration-500 w-72 text-center p-6"
+            className=" cursor-pointer bg-[#1e293b] border items-center hover:shadow-[0_0_20px_rgba(255,246,255,0.3),0_0_40px_rgba(255,246,255,0.4)]
+ justify-center  border-gray-700 rounded-2xl shadow-2xl hover:scale-105 transform transition-all duration-500 w-72 text-center p-6"
           >
             {/* Circular Image with Overlay */}
             <div className="relative w-28 h-28 mx-auto rounded-full overflow-hidden group mb-4">
@@ -619,7 +707,8 @@ const containerRef = useRef(null);
 
 
     </div>
+    
   );
-}
+};
 
 export default Home;

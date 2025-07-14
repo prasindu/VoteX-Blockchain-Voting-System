@@ -17,7 +17,7 @@ const RotatingModel = () => {
 
 const Scene = () => {
   return (
-    <div style={{ width: '100%', height: '600px', background: '#0a0a0a' }}>
+    <div style={{ width: '100%', height: '600px', background: '#000000' }}>
       <Canvas camera={{ position: [0, 1, 3], fov: 45 }} shadows gl={{ antialias: true }}>
         <ambientLight intensity={0.4} />
         <directionalLight
