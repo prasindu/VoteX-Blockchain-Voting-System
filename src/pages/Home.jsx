@@ -411,7 +411,7 @@ return (
         transition={{ delay: 0.2, duration: 0.6 }}
         className="grid grid-cols-1 md:grid-cols-3 gap-6 z-30 mt-8 px-4"
       >
-        {["admin", "Vote", "Results"].map((label, i) => (
+        {["Election", "Vote", "Results"].map((label, i) => (
           <Link to={`/${label.toLowerCase()}`} key={i}>
             <motion.div
               whileHover={{ scale: 1.05 }}
